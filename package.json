@@ -1,0 +1,12 @@
+{
+  "name": "majiang",
+  "private": true,
+  "scripts": {
+    "dev:server": "pnpm -F server dev",
+    "dev:web": "pnpm -F web dev",
+    "build": "pnpm -F shared build && pnpm -F server build && pnpm -F web build"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

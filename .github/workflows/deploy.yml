@@ -1,0 +1,70 @@
+name: Deploy to Mac Mini
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build server image
+        run: docker build -f apps/server/Dockerfile -t majiang-server .
+
+      - name: Build web image
+        run: docker build -f apps/web/Dockerfile -t majiang-web .
+
+      - name: Save images
+        run: |
+          docker save majiang-server | gzip > server.tar.gz
+          docker save majiang-web | gzip > web.tar.gz
+
+      - name: Install Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Deploy
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          # Copy images and compose file
+          scp -o StrictHostKeyChecking=no server.tar.gz web.tar.gz $USER@$HOST:/tmp/
+          scp -o StrictHostKeyChecking=no docker-compose.yml $USER@$HOST:/Users/$USER/majiang/
+
+          # Load images and restart
+          ssh -o StrictHostKeyChecking=no $USER@$HOST "
+            export PATH=/usr/local/bin:\$PATH
+            docker load < /tmp/server.tar.gz
+            docker load < /tmp/web.tar.gz
+            rm /tmp/server.tar.gz /tmp/web.tar.gz
+            cd /Users/$USER/majiang
+            docker compose up -d --remove-orphans
+          "
+
+      - name: Health check
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          sleep 5
+          ssh -o StrictHostKeyChecking=no $USER@$HOST "
+            export PATH=/usr/local/bin:\$PATH
+            curl -sf http://localhost:7702/api/health || exit 1
+          "
+          echo "Deploy successful!"
