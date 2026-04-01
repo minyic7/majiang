@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import TopBar from "../components/layout/TopBar.js";
 import GameTable from "../components/game/GameTable.js";
@@ -26,12 +25,9 @@ export default function GamePage() {
   } = useGameData();
 
   const roundResult = useGameStore((s) => s.roundResult);
+  const chatMessages = useGameStore((s) => s.chatMessages);
   const navigate = useNavigate();
   const trackerSections = useTileTracker();
-
-  const [chatMessages, setChatMessages] = useState<
-    { id: string; sender: string; text: string; isMe?: boolean }[]
-  >([]);
 
   if (!gameState || !data) {
     return (
@@ -99,16 +95,12 @@ export default function GamePage() {
           <ChatPanel
             messages={chatMessages}
             onSend={(text) => {
-              setChatMessages((prev) => [
-                ...prev,
-                { id: String(Date.now()), sender: "我", text, isMe: true },
-              ]);
+              const socket = useGameStore.getState().socket;
+              if (socket) socket.emit("chatMessage", { text });
             }}
             onEmoji={(emoji) => {
-              setChatMessages((prev) => [
-                ...prev,
-                { id: String(Date.now()), sender: "我", text: emoji, isMe: true },
-              ]);
+              const socket = useGameStore.getState().socket;
+              if (socket) socket.emit("chatMessage", { text: emoji });
             }}
           />
         </div>
