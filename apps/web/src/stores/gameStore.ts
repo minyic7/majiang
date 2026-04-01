@@ -99,7 +99,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   addChatMessage: ({ sender, text }) =>
     set((state) => ({
       chatMessages: [
-        ...state.chatMessages,
+        ...state.chatMessages.slice(-99),
         { id: String(Date.now()), sender, text, isMe: sender === state.playerName },
       ],
     })),
