@@ -24,10 +24,20 @@ export class Room {
   players: RoomPlayer[] = [];
   state: "waiting" | "playing" | "finished" = "waiting";
   engine: GameEngine | null = null;
+  finishedAt?: number;
+  private cleanupTimer?: ReturnType<typeof setTimeout>;
 
   constructor(ruleSetId: string) {
     this.id = generateRoomId();
     this.ruleSetId = ruleSetId;
+  }
+
+  setFinished(): void {
+    this.state = "finished";
+    this.finishedAt = Date.now();
+    this.cleanupTimer = setTimeout(() => {
+      roomManager.removeRoom(this.id);
+    }, 5 * 60 * 1000);
   }
 
   addPlayer(name: string, socketId?: string, isBot = false): boolean {
@@ -90,8 +100,12 @@ export class Room {
   }
 }
 
+const CLEANUP_INTERVAL_MS = 60 * 1000;
+const FINISHED_ROOM_TTL_MS = 5 * 60 * 1000;
+
 export class RoomManager {
   private rooms = new Map<string, Room>();
+  private cleanupInterval?: ReturnType<typeof setInterval>;
 
   createRoom(ruleSetId: string): Room {
     const room = new Room(ruleSetId);
@@ -110,7 +124,31 @@ export class RoomManager {
   removeRoom(id: string): boolean {
     return this.rooms.delete(id);
   }
+
+  startPeriodicCleanup(): void {
+    if (this.cleanupInterval) return;
+    this.cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      for (const room of this.rooms.values()) {
+        if (
+          room.state === "finished" &&
+          room.finishedAt &&
+          now - room.finishedAt >= FINISHED_ROOM_TTL_MS
+        ) {
+          this.rooms.delete(room.id);
+        }
+      }
+    }, CLEANUP_INTERVAL_MS);
+  }
+
+  stopPeriodicCleanup(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
+    }
+  }
 }
 
 // Singleton instance
 export const roomManager = new RoomManager();
+roomManager.startPeriodicCleanup();
