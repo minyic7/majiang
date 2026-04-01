@@ -105,6 +105,8 @@ export class GameEngine {
       lastDiscard: gs.lastDiscard,
       ruleSetId: gs.ruleSetId,
       myIndex: playerIndex,
+      goldenTile: gs.goldenTile,
+      flippedTile: gs.flippedTile,
     };
   }
 
@@ -149,6 +151,20 @@ export class GameEngine {
     if (this.ruleSet.hasBonusTiles) {
       for (let i = 0; i < 4; i++) {
         this.replaceBonusTiles(i);
+      }
+    }
+
+    // Reveal golden tile (if RuleSet supports it)
+    if (this.ruleSet.determineGoldenTile) {
+      let flipped = this.drawFromWall();
+      // Skip bonus tiles — put them back in tail and draw again
+      while (flipped && this.ruleSet.isBonusTile(flipped.tile)) {
+        this.gameState.wallTail.push(flipped);
+        flipped = this.drawFromWall();
+      }
+      if (flipped) {
+        this.gameState.flippedTile = flipped.tile;
+        this.gameState.goldenTile = this.ruleSet.determineGoldenTile(flipped.tile);
       }
     }
 
@@ -526,6 +542,7 @@ export class GameEngine {
       isFirstAction: player.discards.length === 0 && player.melds.length === 0,
       isDealer: player.isDealer,
       isRobbingKong: false,
+      extra: { goldenTile: this.gameState.goldenTile },
     });
 
     if (!winResult.isWin) return false;
@@ -537,6 +554,7 @@ export class GameEngine {
       {
         isSelfDraw,
         discarderIndex: isSelfDraw ? null : this.gameState.lastDiscard?.playerIndex ?? null,
+        extra: { goldenTile: this.gameState.goldenTile, dealerIndex: this.gameState.dealerIndex },
       }
     );
 

@@ -1,6 +1,6 @@
 import type { GameState, PlayerState } from "./game.js";
 import type { AvailableActions } from "./rules.js";
-import type { TileInstance } from "./tile.js";
+import type { Tile, TileInstance } from "./tile.js";
 
 /** Client game state — hides other players' hands */
 export interface ClientGameState {
@@ -13,6 +13,8 @@ export interface ClientGameState {
   lastDiscard: GameState["lastDiscard"];
   ruleSetId: string;
   myIndex: number;
+  goldenTile?: Tile;
+  flippedTile?: Tile;
 }
 
 export interface ClientPlayerState {

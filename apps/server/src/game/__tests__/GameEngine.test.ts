@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { GamePhase, Suit, registerRuleSet } from "@majiang/shared";
-import type { ClientGameState, Tile, TileInstance } from "@majiang/shared";
+import { GamePhase, Suit, registerRuleSet, fuzhouRuleSet } from "@majiang/shared";
+import type { ClientGameState, Tile, TileInstance, RuleSet } from "@majiang/shared";
 import { GameEngine } from "../GameEngine.js";
 import type { PlayerInfo, GameEngineCallbacks } from "../GameEngine.js";
 import { StubRuleSet } from "./StubRuleSet.js";
@@ -251,5 +251,111 @@ describe("GameEngine - chained claims", () => {
     // Game should end in a draw (wall runs out)
     expect(gameOverResult).not.toBeNull();
     expect(gameOverResult!.winType).toBe("draw");
+  });
+});
+
+describe("GameEngine - golden tile", () => {
+  const goldenPlayers: PlayerInfo[] = [
+    { name: "P0", isBot: true },
+    { name: "P1", isBot: true },
+    { name: "P2", isBot: true },
+    { name: "P3", isBot: true },
+  ];
+
+  it("should reveal golden tile during deal when RuleSet supports it", async () => {
+    const engine = new GameEngine(fuzhouRuleSet, goldenPlayers, { botDelayMs: 0 });
+    await engine.startGame();
+
+    // After deal, goldenTile and flippedTile should be set
+    expect(engine.gameState.goldenTile).toBeDefined();
+    expect(engine.gameState.flippedTile).toBeDefined();
+  });
+
+  it("should not reveal golden tile for RuleSets without determineGoldenTile", async () => {
+    const engine = new GameEngine(StubRuleSet, goldenPlayers, { botDelayMs: 0 });
+    await engine.startGame();
+
+    // StubRuleSet has no determineGoldenTile, so these should be undefined
+    expect(engine.gameState.goldenTile).toBeUndefined();
+    expect(engine.gameState.flippedTile).toBeUndefined();
+  });
+
+  it("should include goldenTile and flippedTile in ClientGameState", async () => {
+    const states: ClientGameState[] = [];
+    const engine = new GameEngine(fuzhouRuleSet, goldenPlayers, {
+      botDelayMs: 0,
+      onStateUpdate: (_idx, state) => {
+        if (_idx === 0) states.push(state);
+      },
+    });
+    await engine.startGame();
+
+    // Find a state after dealing (Playing phase)
+    const playingState = states.find((s) => s.phase === GamePhase.Playing);
+    expect(playingState).toBeDefined();
+    expect(playingState!.goldenTile).toBeDefined();
+    expect(playingState!.flippedTile).toBeDefined();
+  });
+
+  it("should skip bonus tiles when flipping for golden tile", () => {
+    // Create a RuleSet stub that has determineGoldenTile and bonus tiles
+    const ruleSetWithGolden: RuleSet = {
+      ...StubRuleSet,
+      id: "stub-golden",
+      hasBonusTiles: true,
+      isBonusTile(tile: Tile): boolean {
+        return tile.kind === "season" || tile.kind === "plant";
+      },
+      determineGoldenTile(flippedTile: Tile): Tile {
+        // Simple: just return the tile itself as the golden tile
+        return flippedTile;
+      },
+    };
+
+    const engine = new GameEngine(ruleSetWithGolden, goldenPlayers);
+    const gs = engine.gameState;
+
+    // Pre-set hands so deal() doesn't need to deal from wall
+    for (const p of gs.players) {
+      p.hand = Array.from({ length: 13 }, (_, i) => ({
+        id: 1000 + i,
+        tile: { kind: "suited", suit: Suit.Wan, value: 1 } as Tile,
+      }));
+    }
+
+    // Override shuffle to be a no-op so we control exact wall order
+    (engine as any).shuffle = () => {};
+
+    // Set up wall: bonus tiles at front, then a suited tile for the golden tile flip
+    // deal() will re-create the wall from createTilePool, so we override createTilePool too
+    // Actually simpler: just override the deal internals by monkey-patching
+    // Let's instead directly test the golden tile reveal logic post-deal
+    // by setting up the wall manually and calling deal()
+
+    // Override createTilePool to return controlled tiles:
+    // 52 suited tiles for hands (4 players x 13) + 2 bonus + 1 suited for golden flip
+    const controlledTiles: Tile[] = [];
+    // 52 wan-1 tiles for dealing
+    for (let i = 0; i < 52; i++) {
+      controlledTiles.push({ kind: "suited", suit: Suit.Wan, value: 1 } as Tile);
+    }
+    // These will end up in the wall after dealing:
+    // 2 bonus tiles followed by suited wan-5
+    controlledTiles.push({ kind: "season", seasonType: "spring" });
+    controlledTiles.push({ kind: "season", seasonType: "summer" });
+    controlledTiles.push({ kind: "suited", suit: Suit.Wan, value: 5 } as Tile);
+    // A few more tiles for the wall tail
+    for (let i = 0; i < 14; i++) {
+      controlledTiles.push({ kind: "suited", suit: Suit.Wan, value: 2 } as Tile);
+    }
+
+    ruleSetWithGolden.createTilePool = () => controlledTiles;
+
+    (engine as any).deal();
+
+    // The bonus tiles should have been skipped
+    // The flipped tile should be wan-5
+    expect(gs.flippedTile).toEqual({ kind: "suited", suit: Suit.Wan, value: 5 });
+    expect(gs.goldenTile).toEqual({ kind: "suited", suit: Suit.Wan, value: 5 });
   });
 });
