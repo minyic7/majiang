@@ -1,3 +1,4 @@
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Tile from "../tile/Tile.js";
 
 interface OpponentAreaProps {
@@ -24,24 +25,40 @@ export default function OpponentArea(props: OpponentAreaProps) {
 function NorthPlayer({
   name, handCount, discards, melds, flowerCount, isCurrentTurn, onFlowerClick,
 }: OpponentAreaProps) {
+  const prefersReduced = useReducedMotion();
+  const dur = prefersReduced ? 0 : 0.15;
+  const meldDur = prefersReduced ? 0 : 0.2;
+
   return (
     <div className="flex items-end justify-center gap-3 h-full overflow-hidden">
       {/* Hand backs */}
-      <div className="shrink-0 flex gap-0.5 items-end pt-4 pb-1">
+      <motion.div
+        layout
+        transition={{ duration: dur }}
+        className="shrink-0 flex gap-0.5 items-end pt-4 pb-1"
+      >
         {Array.from({ length: handCount }, (_, i) => (
           <Tile key={i} variant="back" size="md" />
         ))}
-      </div>
+      </motion.div>
       {/* Melds (right side = opponent's left hand) */}
       {melds.length > 0 && (
         <div className="shrink-0 border border-white/[.12] rounded-sm px-1.5 pt-4 pb-1 flex gap-2 items-end">
-          {melds.map((meld, i) => (
-            <div key={i} className="flex gap-px">
-              {meld.map((c, j) => (
-                <Tile key={j} char={c} variant="face" size="md" />
-              ))}
-            </div>
-          ))}
+          <AnimatePresence>
+            {melds.map((meld, i) => (
+              <motion.div
+                key={`meld-${i}-${meld.join(",")}`}
+                initial={{ opacity: 0, scale: 0.8, x: -15 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                transition={{ duration: meldDur }}
+                className="flex gap-px"
+              >
+                {meld.map((c, j) => (
+                  <Tile key={j} char={c} variant="face" size="md" />
+                ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
           <span className="text-[11px] text-white/30 font-medium">副露</span>
         </div>
       )}
@@ -65,6 +82,9 @@ function SidePlayer({
 }: OpponentAreaProps) {
   const rotate = position === "west" ? -90 as const : 90 as const;
   const isWest = position === "west";
+  const prefersReduced = useReducedMotion();
+  const dur = prefersReduced ? 0 : 0.15;
+  const meldDur = prefersReduced ? 0 : 0.2;
 
   const nameBlock = (
     <div className="shrink-0 flex items-center gap-1">
@@ -74,23 +94,35 @@ function SidePlayer({
   );
 
   const handBlock = (
-    <div className="shrink-0 flex flex-col gap-0.5 items-center">
+    <motion.div
+      layout
+      transition={{ duration: dur }}
+      className="shrink-0 flex flex-col gap-0.5 items-center"
+    >
       {Array.from({ length: handCount }, (_, i) => (
         <Tile key={i} variant="back" size="md" rotate={rotate} />
       ))}
-    </div>
+    </motion.div>
   );
 
   const meldsBlock = melds.length > 0 ? (
     <div className="shrink-0 border border-white/[.12] rounded-sm p-1.5 flex flex-col gap-1 items-center">
       {isWest && <span className="text-[11px] text-white/30 font-medium">副露</span>}
-      {melds.map((meld, i) => (
-        <div key={i} className="flex flex-col gap-px">
-          {meld.map((c, j) => (
-            <Tile key={j} char={c} variant="face" size="md" rotate={rotate} />
-          ))}
-        </div>
-      ))}
+      <AnimatePresence>
+        {melds.map((meld, i) => (
+          <motion.div
+            key={`meld-${i}-${meld.join(",")}`}
+            initial={{ opacity: 0, scale: 0.8, y: -15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: meldDur }}
+            className="flex flex-col gap-px"
+          >
+            {meld.map((c, j) => (
+              <Tile key={j} char={c} variant="face" size="md" rotate={rotate} />
+            ))}
+          </motion.div>
+        ))}
+      </AnimatePresence>
       {!isWest && <span className="text-[11px] text-white/30 font-medium">副露</span>}
     </div>
   ) : null;

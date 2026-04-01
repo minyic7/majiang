@@ -66,11 +66,9 @@ export class Room {
       throw new Error(`RuleSet "${this.ruleSetId}" not found in registry`);
     }
 
-    const playerInfos: PlayerInfo[] = this.players.map((p) => ({
-      name: p.name,
-      isBot: p.isBot,
-      socketId: p.socketId,
-    }));
+    // Pass player references directly so GameEngine sees live socketId updates
+    // (e.g. when a player disconnects and socketId is cleared)
+    const playerInfos: PlayerInfo[] = this.players;
 
     this.engine = new GameEngine(ruleSet, playerInfos, callbacks);
     this.state = "playing";
