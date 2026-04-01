@@ -58,6 +58,9 @@ function makeGameState(
     lastDiscard: null,
     ruleSetId: "fuzhou",
     goldenTile: goldenTile ?? undefined,
+    currentRound: 1,
+    prevalentWind: "east",
+    roundInWind: 1,
   };
 }
 

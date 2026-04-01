@@ -15,6 +15,9 @@ export interface ClientGameState {
   myIndex: number;
   goldenTile?: Tile;
   flippedTile?: Tile;
+  currentRound: number;
+  prevalentWind: "east" | "south" | "west" | "north";
+  roundInWind: number;
 }
 
 export interface ClientPlayerState {
