@@ -1,4 +1,4 @@
-name: Deploy to Mac Mini
+name: Deploy
 
 on:
   push:
@@ -10,19 +10,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build server image
-        run: docker build -f apps/server/Dockerfile -t majiang-server .
-
-      - name: Build web image
-        run: docker build -f apps/web/Dockerfile -t majiang-web .
+      - name: Build images
+        run: |
+          docker build -f apps/server/Dockerfile -t majiang-server . &
+          docker build -f apps/web/Dockerfile -t majiang-web . &
+          wait
 
       - name: Save images
         run: |
-          docker save majiang-server | gzip > server.tar.gz
-          docker save majiang-web | gzip > web.tar.gz
+          docker save majiang-server | gzip > server.tar.gz &
+          docker save majiang-web | gzip > web.tar.gz &
+          wait
 
       - name: Install Tailscale
         uses: tailscale/github-action@v3
@@ -43,11 +41,8 @@ jobs:
           HOST: ${{ secrets.DEPLOY_HOST }}
           USER: ${{ secrets.DEPLOY_USER }}
         run: |
-          # Copy images and compose file
           scp -o StrictHostKeyChecking=no server.tar.gz web.tar.gz $USER@$HOST:/tmp/
           scp -o StrictHostKeyChecking=no docker-compose.yml $USER@$HOST:/Users/$USER/majiang/
-
-          # Load images and restart
           ssh -o StrictHostKeyChecking=no $USER@$HOST "
             export PATH=/usr/local/bin:\$PATH
             docker load < /tmp/server.tar.gz
@@ -67,4 +62,3 @@ jobs:
             export PATH=/usr/local/bin:\$PATH
             curl -sf http://localhost:7702/api/health || exit 1
           "
-          echo "Deploy successful!"
