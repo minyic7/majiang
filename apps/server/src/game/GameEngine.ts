@@ -500,11 +500,7 @@ export class GameEngine {
         );
         const botDelay = this.callbacks.botDelayMs ?? BotPlayer.getThinkDelay();
         setTimeout(() => {
-          const botAction = BotPlayer.chooseResponseAction(responseActions, p, this.gameState.goldenTile);
-          // Fill in targetTile for peng/gang
-          if (botAction.type === ActionType.Peng || botAction.type === ActionType.MingGang) {
-            (botAction as { targetTile: TileInstance }).targetTile = discardedTile;
-          }
+          const botAction = BotPlayer.chooseResponseAction(responseActions, p, this.gameState.goldenTile, discardedTile);
           resolver.submitAction(p, botAction);
         }, botDelay);
       }
