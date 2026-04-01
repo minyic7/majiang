@@ -34,7 +34,7 @@ export interface ClientPlayerState {
 /** Socket.IO event types */
 export interface ServerEvents {
   gameStateUpdate: (state: ClientGameState) => void;
-  actionRequired: (actions: AvailableActions) => void;
+  actionRequired: (actions: AvailableActions, timeoutMs: number) => void;
   gameOver: (result: {
     winnerId: number | null;
     winType: string;
