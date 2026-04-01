@@ -131,7 +131,7 @@ describe("Full Fuzhou playtest", () => {
     it("GET /api/rulesets returns fuzhou", async () => {
       const res = await fetch(`${baseUrl}/api/rulesets`);
       expect(res.status).toBe(200);
-      const data: { id: string; name: string; description: string }[] = await res.json();
+      const data = (await res.json()) as { id: string; name: string; description: string }[];
       expect(Array.isArray(data)).toBe(true);
       const fuzhou = data.find((r) => r.id === "fuzhou");
       expect(fuzhou).toBeDefined();
@@ -152,13 +152,13 @@ describe("Full Fuzhou playtest", () => {
         body: JSON.stringify({ ruleSetId: "fuzhou" }),
       });
       expect(createRes.status).toBe(201);
-      const room: RoomInfo = await createRes.json();
+      const room = (await createRes.json()) as RoomInfo;
       expect(room.id).toBeTruthy();
       expect(room.ruleSetId).toBe("fuzhou");
 
       const getRes = await fetch(`${baseUrl}/api/rooms/${room.id}`);
       expect(getRes.status).toBe(200);
-      const fetched: RoomInfo = await getRes.json();
+      const fetched = (await getRes.json()) as RoomInfo;
       expect(fetched.id).toBe(room.id);
     });
   });
