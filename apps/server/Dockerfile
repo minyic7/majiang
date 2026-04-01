@@ -4,8 +4,6 @@ WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm -F shared build
-# Debug: verify shared dist and symlink
-RUN ls -la packages/shared/dist/ && ls -la node_modules/@majiang/shared/ && cat node_modules/@majiang/shared/package.json | head -15
 RUN pnpm -F server build
 
 FROM node:22-alpine
