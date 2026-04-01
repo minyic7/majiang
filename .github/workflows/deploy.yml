@@ -79,7 +79,7 @@ jobs:
           USER: ${{ secrets.DEPLOY_USER }}
         run: |
           sleep 5
-          ssh -o StrictHostKeyChecking=no $USER@$HOST "
+          ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no $USER@$HOST "
             export PATH=/usr/local/bin:\$PATH
-            curl -sf http://localhost:7702/api/health || exit 1
+            curl -sf --max-time 10 http://localhost:7702/api/health || exit 1
           "

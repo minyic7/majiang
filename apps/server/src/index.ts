@@ -1,9 +1,9 @@
-import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
+import { getRequestListener } from "@hono/node-server";
 import type { ClientEvents, ServerEvents } from "@majiang/shared";
 import { getAllRuleSets } from "@majiang/shared";
 
@@ -20,7 +20,8 @@ app.get("/api/rulesets", (c) => {
 
 const port = Number(process.env.PORT) || 7702;
 
-const httpServer = createServer(app.fetch as any);
+// Use getRequestListener to properly bridge Hono with Node.js http server
+const httpServer = createServer(getRequestListener(app.fetch));
 
 const io = new Server<ClientEvents, ServerEvents>(httpServer, {
   cors: { origin: "*" },
