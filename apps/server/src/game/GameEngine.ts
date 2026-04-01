@@ -49,6 +49,7 @@ export class GameEngine {
   private actionResolver: ActionResolver | null = null;
   private lianZhuangCount = 0;
   private scores: number[] = [0, 0, 0, 0];
+  private gangDrawPending = false;
   constructor(ruleSet: RuleSet, players: PlayerInfo[], callbacks: GameEngineCallbacks = {}) {
     this.ruleSet = ruleSet;
     this.players = players;
@@ -184,8 +185,14 @@ export class GameEngine {
     while (this.gameState.phase === GamePhase.Playing) {
       const turn = this.gameState.currentTurn;
 
-      // Draw a tile
-      const drawn = this.drawTileForPlayer(turn);
+      // Draw a tile (from wallTail after gang, otherwise from wall)
+      let drawn: TileInstance | null;
+      if (this.gangDrawPending) {
+        this.gangDrawPending = false;
+        drawn = this.drawTileForPlayerFromTail(turn);
+      } else {
+        drawn = this.drawTileForPlayer(turn);
+      }
       if (!drawn) {
         this.endGameDraw();
         return;
@@ -212,13 +219,13 @@ export class GameEngine {
 
       if (postDrawAction.type === ActionType.AnGang) {
         this.executeAnGang(turn, postDrawAction.tile);
-        // After gang, player draws again from wall tail
+        this.gangDrawPending = true;
         continue;
       }
 
       if (postDrawAction.type === ActionType.BuGang) {
         this.executeBuGang(turn, postDrawAction.tile);
-        // After gang, player draws again from wall tail
+        this.gangDrawPending = true;
         continue;
       }
 
@@ -258,7 +265,7 @@ export class GameEngine {
     if (claimResult.action.type === ActionType.MingGang) {
       this.executeMingGang(claimResult.playerIndex, sourceIndex, claimedTile);
       this.gameState.currentTurn = claimResult.playerIndex;
-      // Gang player draws from tail next turn
+      this.gangDrawPending = true;
       return;
     }
 
@@ -597,6 +604,24 @@ export class GameEngine {
     if (!tile) return null;
 
     // Handle bonus tiles
+    if (this.ruleSet.hasBonusTiles) {
+      while (tile && this.ruleSet.isBonusTile(tile.tile)) {
+        this.gameState.players[playerIndex].flowers.push(tile);
+        this.broadcastState();
+        tile = this.drawFromWallTail();
+      }
+    }
+
+    if (tile) {
+      this.gameState.players[playerIndex].hand.push(tile);
+    }
+    return tile;
+  }
+
+  private drawTileForPlayerFromTail(playerIndex: number): TileInstance | null {
+    let tile = this.drawFromWallTail();
+    if (!tile) return null;
+
     if (this.ruleSet.hasBonusTiles) {
       while (tile && this.ruleSet.isBonusTile(tile.tile)) {
         this.gameState.players[playerIndex].flowers.push(tile);
