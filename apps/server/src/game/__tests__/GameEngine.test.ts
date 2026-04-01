@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { GamePhase, registerRuleSet } from "@majiang/shared";
-import type { ClientGameState, AvailableActions } from "@majiang/shared";
+import { describe, it, expect } from "vitest";
+import { GamePhase, Suit, registerRuleSet } from "@majiang/shared";
+import type { ClientGameState, Tile, TileInstance } from "@majiang/shared";
 import { GameEngine } from "../GameEngine.js";
 import type { PlayerInfo, GameEngineCallbacks } from "../GameEngine.js";
 import { StubRuleSet } from "./StubRuleSet.js";
@@ -172,5 +172,84 @@ describe("GameEngine - ClientGameState privacy", () => {
       expect(Array.isArray(player.discards)).toBe(true);
       expect(Array.isArray(player.flowers)).toBe(true);
     }
+  });
+});
+
+describe("GameEngine - chained claims", () => {
+  it("should handle chained peng claims: peng → discard → peng → discard", async () => {
+    const players: PlayerInfo[] = [
+      { name: "P0", isBot: true },
+      { name: "P1", isBot: true },
+      { name: "P2", isBot: true },
+      { name: "P3", isBot: true },
+    ];
+
+    const wan = (value: number, id: number): TileInstance => ({
+      id,
+      tile: { kind: "suited", suit: Suit.Wan, value } as Tile,
+    });
+
+    let gameOverResult: { winnerId: number | null; winType: string } | null = null;
+
+    const engine = new GameEngine(StubRuleSet, players, {
+      botDelayMs: 0,
+      onGameOver: (result) => {
+        gameOverResult = result;
+      },
+    });
+
+    const gs = engine.gameState;
+    gs.dealerIndex = 0;
+    gs.currentTurn = 0;
+    for (let i = 0; i < 4; i++) {
+      gs.players[i].isDealer = i === 0;
+    }
+
+    // Setup: P0 hand is all wan1 so bot always discards wan1.
+    // P1 has 2x wan1 (can peng) + 11x wan2 (after peng, all wan2, always discards wan2).
+    // P2 has 2x wan2 (can peng after P1 discards wan2) + 11x wan3.
+    // P3 has misc tiles (no matching pairs for wan1/wan2/wan3).
+    gs.players[0].hand = Array.from({ length: 13 }, (_, i) => wan(1, 100 + i));
+    gs.players[1].hand = [
+      wan(1, 200), wan(1, 201),
+      ...Array.from({ length: 11 }, (_, i) => wan(2, 202 + i)),
+    ];
+    gs.players[2].hand = [
+      wan(2, 300), wan(2, 301),
+      ...Array.from({ length: 11 }, (_, i) => wan(3, 302 + i)),
+    ];
+    gs.players[3].hand = Array.from({ length: 13 }, (_, i) => wan(4, 400 + i));
+
+    // Wall: first tile is wan1 (P0 draws this, hand stays all wan1, discards wan1).
+    // Remaining tiles let the game finish after the chain.
+    gs.wall = [
+      wan(1, 500),
+      wan(5, 501), wan(5, 502), wan(5, 503), wan(5, 504),
+    ];
+    gs.wallTail = [];
+    gs.phase = GamePhase.Playing;
+
+    await (engine as any).playLoop();
+
+    // Player 1 should have a peng meld of wan1
+    const p1Melds = gs.players[1].melds;
+    expect(p1Melds.length).toBeGreaterThanOrEqual(1);
+    expect(p1Melds[0].tiles.some((t: TileInstance) =>
+      t.tile.kind === "suited" && (t.tile as any).value === 1
+    )).toBe(true);
+
+    // Player 2 should have a peng meld of wan2 (chained claim worked!)
+    const p2Melds = gs.players[2].melds;
+    expect(p2Melds.length).toBeGreaterThanOrEqual(1);
+    expect(p2Melds[0].tiles.some((t: TileInstance) =>
+      t.tile.kind === "suited" && (t.tile as any).value === 2
+    )).toBe(true);
+
+    // Player 2 discarded after peng (went through discard flow, not draw)
+    expect(gs.players[2].discards.length).toBeGreaterThanOrEqual(1);
+
+    // Game should end in a draw (wall runs out)
+    expect(gameOverResult).not.toBeNull();
+    expect(gameOverResult!.winType).toBe("draw");
   });
 });

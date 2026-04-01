@@ -43,8 +43,6 @@ export class GameEngine {
   private actionResolver: ActionResolver | null = null;
   private lianZhuangCount = 0;
   private scores: number[] = [0, 0, 0, 0];
-  private isProcessing = false;
-
   constructor(ruleSet: RuleSet, players: PlayerInfo[], callbacks: GameEngineCallbacks = {}) {
     this.ruleSet = ruleSet;
     this.players = players;
@@ -210,56 +208,9 @@ export class GameEngine {
         const claimResult = await this.handleDiscardResponses(turn, postDrawAction.tile);
 
         if (claimResult) {
-          if (claimResult.action.type === ActionType.Hu) {
-            const won = this.handleHu(claimResult.playerIndex, postDrawAction.tile, false);
-            if (won) return;
-          } else if (claimResult.action.type === ActionType.Peng) {
-            this.executePeng(claimResult.playerIndex, turn, postDrawAction.tile);
-            // After peng, claiming player must discard
-            const pengDiscardAction = await this.waitForPengDiscard(claimResult.playerIndex);
-            this.executeDiscard(claimResult.playerIndex, (pengDiscardAction as { tile: TileInstance }).tile);
-            this.broadcastState();
-
-            const pengClaimResult = await this.handleDiscardResponses(
-              claimResult.playerIndex,
-              (pengDiscardAction as { tile: TileInstance }).tile
-            );
-            if (pengClaimResult) {
-              this.handleClaim(pengClaimResult, claimResult.playerIndex);
-              if (this.gameState.phase !== GamePhase.Playing) return;
-            } else {
-              this.advanceTurn(claimResult.playerIndex);
-            }
-            continue;
-          } else if (claimResult.action.type === ActionType.MingGang) {
-            this.executeMingGang(claimResult.playerIndex, turn, postDrawAction.tile);
-            this.gameState.currentTurn = claimResult.playerIndex;
-            // Gang player draws from tail next turn
-            continue;
-          } else if (claimResult.action.type === ActionType.Chi) {
-            this.executeChi(
-              claimResult.playerIndex,
-              turn,
-              postDrawAction.tile,
-              (claimResult.action as { tiles: [TileInstance, TileInstance] }).tiles
-            );
-            // After chi, claiming player must discard
-            const chiDiscardAction = await this.waitForPengDiscard(claimResult.playerIndex);
-            this.executeDiscard(claimResult.playerIndex, (chiDiscardAction as { tile: TileInstance }).tile);
-            this.broadcastState();
-
-            const chiClaimResult = await this.handleDiscardResponses(
-              claimResult.playerIndex,
-              (chiDiscardAction as { tile: TileInstance }).tile
-            );
-            if (chiClaimResult) {
-              this.handleClaim(chiClaimResult, claimResult.playerIndex);
-              if (this.gameState.phase !== GamePhase.Playing) return;
-            } else {
-              this.advanceTurn(claimResult.playerIndex);
-            }
-            continue;
-          }
+          await this.handleClaimAndDiscard(claimResult, turn, postDrawAction.tile);
+          if (this.gameState.phase !== GamePhase.Playing) return;
+          continue;
         }
 
         // No one claimed, advance to next player
@@ -268,21 +219,53 @@ export class GameEngine {
     }
   }
 
-  private handleClaim(
+  /**
+   * Handle a claim (peng/chi/gang/hu) and the subsequent mandatory discard.
+   * If the discard is itself claimed, recurse to handle the chain.
+   */
+  private async handleClaimAndDiscard(
     claimResult: { playerIndex: number; action: GameAction },
-    discarderIndex: number
-  ): void {
-    const discardTile = this.gameState.lastDiscard?.tile;
-    if (!discardTile) return;
-
+    sourceIndex: number,
+    claimedTile: TileInstance
+  ): Promise<void> {
     if (claimResult.action.type === ActionType.Hu) {
-      this.handleHu(claimResult.playerIndex, discardTile, false);
-    } else if (claimResult.action.type === ActionType.Peng) {
-      this.executePeng(claimResult.playerIndex, discarderIndex, discardTile);
+      this.handleHu(claimResult.playerIndex, claimedTile, false);
+      return;
+    }
+
+    if (claimResult.action.type === ActionType.MingGang) {
+      this.executeMingGang(claimResult.playerIndex, sourceIndex, claimedTile);
       this.gameState.currentTurn = claimResult.playerIndex;
-    } else if (claimResult.action.type === ActionType.MingGang) {
-      this.executeMingGang(claimResult.playerIndex, discarderIndex, discardTile);
-      this.gameState.currentTurn = claimResult.playerIndex;
+      // Gang player draws from tail next turn
+      return;
+    }
+
+    if (claimResult.action.type === ActionType.Peng) {
+      this.executePeng(claimResult.playerIndex, sourceIndex, claimedTile);
+    } else if (claimResult.action.type === ActionType.Chi) {
+      this.executeChi(
+        claimResult.playerIndex,
+        sourceIndex,
+        claimedTile,
+        (claimResult.action as { tiles: [TileInstance, TileInstance] }).tiles
+      );
+    } else {
+      return;
+    }
+
+    // After peng/chi, claiming player must discard
+    const discardAction = await this.waitForPengDiscard(claimResult.playerIndex);
+    const discardedTile = (discardAction as { tile: TileInstance }).tile;
+    this.executeDiscard(claimResult.playerIndex, discardedTile);
+    this.broadcastState();
+
+    // Check if anyone claims the new discard
+    const nextClaimResult = await this.handleDiscardResponses(claimResult.playerIndex, discardedTile);
+    if (nextClaimResult) {
+      // Recurse to handle the chained claim
+      await this.handleClaimAndDiscard(nextClaimResult, claimResult.playerIndex, discardedTile);
+    } else {
+      this.advanceTurn(claimResult.playerIndex);
     }
   }
 
