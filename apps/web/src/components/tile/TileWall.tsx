@@ -1,131 +1,88 @@
-import { useMemo } from "react";
-
 interface TileWallProps {
-  /** Total remaining tiles (draws from head, supplements from tail) */
   remaining: number;
-  /** Total tile positions (stacks = positions, each stack has 2 tiles) */
   totalStacks?: number;
-  size?: number;
-  /** How many tiles drawn from head (consumed from front) */
-  drawnFromHead?: number;
-  /** How many tiles drawn from tail (supplements) */
-  drawnFromTail?: number;
+  direction: "horizontal" | "vertical";
+  consumeFrom?: "start" | "end";
+  /** Which side the top layer offsets toward (faces center of table) */
+  faceCenter?: "top" | "bottom" | "left" | "right";
 }
 
 const TILE_W = 14;
-const TILE_H = 9;
-const GAP = 1;
-const LAYER_OFFSET = 2.5; // top layer offset for subtle 3D effect
-
-interface StackPos {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  side: "top" | "right" | "bottom" | "left";
-}
-
-function computePositions(size: number): StackPos[] {
-  const positions: StackPos[] = [];
-  const margin = TILE_H + GAP + LAYER_OFFSET + 8; // inset walls so corners don't overlap
-  // Top: left to right
-  for (let x = margin; x < size - margin; x += TILE_W + GAP) {
-    positions.push({ x, y: margin - TILE_H, w: TILE_W, h: TILE_H, side: "top" });
-  }
-  // Right: top to bottom
-  for (let y = margin; y < size - margin; y += TILE_W + GAP) {
-    positions.push({ x: size - margin, y, w: TILE_H, h: TILE_W, side: "right" });
-  }
-  // Bottom: right to left
-  for (let x = size - margin - TILE_W; x >= margin; x -= TILE_W + GAP) {
-    positions.push({ x, y: size - margin, w: TILE_W, h: TILE_H, side: "bottom" });
-  }
-  // Left: bottom to top
-  for (let y = size - margin - TILE_W; y >= margin; y -= TILE_W + GAP) {
-    positions.push({ x: margin - TILE_H, y, w: TILE_H, h: TILE_W, side: "left" });
-  }
-  return positions;
-}
+const TILE_H = 21;
+const OFFSET = 2;
 
 export default function TileWall({
   remaining,
-  totalStacks,
-  size = 300,
-  drawnFromHead = 0,
-  drawnFromTail = 0,
+  totalStacks = 18,
+  direction,
+  consumeFrom = "start",
+  faceCenter = "bottom",
 }: TileWallProps) {
-  const positions = useMemo(() => computePositions(size), [size]);
-  const maxStacks = totalStacks ?? positions.length;
+  const fullStacks = Math.floor(remaining / 2);
+  const hasHalf = remaining % 2 === 1;
+  const totalVisible = fullStacks + (hasHalf ? 1 : 0);
 
-  // Each stack has 2 tiles. Remaining tiles maps to stacks:
-  // - Full stack (2 tiles) = both layers visible
-  // - Half stack (1 tile) = bottom layer only
-  // - Empty = nothing
-  // Draw from head = stacks removed from index 0
-  // Draw from tail = stacks removed from end
+  // Build array of stack sizes, aligned based on consumeFrom
+  const stacks: number[] = [];
+  if (consumeFrom === "start") {
+    // Consumed from start → remaining tiles at the end
+    for (let i = 0; i < totalVisible; i++) {
+      stacks.push(i < fullStacks ? 2 : 1);
+    }
+  } else {
+    // Consumed from end → remaining tiles at the start
+    for (let i = 0; i < totalVisible; i++) {
+      stacks.push(i < fullStacks ? 2 : 1);
+    }
+  }
 
-  const totalTiles = remaining;
-  const headEmpty = drawnFromHead > 0 ? Math.ceil(drawnFromHead / 2) : 0;
-  const tailEmpty = drawnFromTail > 0 ? Math.ceil(drawnFromTail / 2) : 0;
+  // Top layer offset direction
+  const offX = faceCenter === "left" ? -OFFSET : faceCenter === "right" ? OFFSET : 0;
+  const offY = faceCenter === "top" ? -OFFSET : faceCenter === "bottom" ? OFFSET : 0;
 
-  // Simple approach: distribute remaining tiles across visible stacks
-  const visibleStart = headEmpty;
-  const visibleEnd = maxStacks - tailEmpty;
-  const visibleStacks = Math.max(0, visibleEnd - visibleStart);
-  const fullStacks = Math.floor(totalTiles / 2);
-  const hasHalf = totalTiles % 2 === 1;
+  const isHorizontal = direction === "horizontal";
 
   return (
-    <svg width={size} height={size} className="block">
-      {/* Shadow filter for top layer */}
-      <defs>
-        <filter id="stackShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="1" stdDeviation="0.5" floodColor="#000" floodOpacity="0.3" />
-        </filter>
-      </defs>
-
-      {positions.map((p, i) => {
-        if (i < visibleStart || i >= visibleEnd) return null;
-
-        const stackIndex = i - visibleStart;
-        // Count from head: first stacks are full, last might be half
-        const tilesInStack = stackIndex < fullStacks ? 2 : stackIndex === fullStacks && hasHalf ? 1 : 0;
-        if (tilesInStack === 0) return null;
-
-        // Layer offsets based on wall side
-        const topDx = p.side === "left" ? LAYER_OFFSET : p.side === "right" ? -LAYER_OFFSET : 0;
-        const topDy = p.side === "top" ? LAYER_OFFSET : p.side === "bottom" ? -LAYER_OFFSET : 0;
-
-        return (
-          <g key={i}>
-            {/* Bottom layer (darker) */}
-            <rect
-              x={p.x}
-              y={p.y}
-              width={p.w}
-              height={p.h}
-              rx={1.5}
-              fill="#3D6830"
-              stroke="#5A8848"
-              strokeWidth={0.5}
+    <div className={`flex ${isHorizontal ? "flex-row" : "flex-col"} gap-px`}>
+      {stacks.map((count, i) => (
+        <div
+          key={i}
+          className="relative shrink-0"
+          style={{
+            width: isHorizontal ? TILE_W + Math.abs(offX) : TILE_H + Math.abs(offX),
+            height: isHorizontal ? TILE_H + Math.abs(offY) : TILE_W + Math.abs(offY),
+          }}
+        >
+          {/* Bottom layer */}
+          <div
+            className="absolute rounded-sm"
+            style={{
+              width: isHorizontal ? TILE_W : TILE_H,
+              height: isHorizontal ? TILE_H : TILE_W,
+              background: "linear-gradient(135deg, #3a6530, #2d5025)",
+              border: "0.5px solid #4a7838",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+              top: offY > 0 ? 0 : Math.abs(offY),
+              left: offX > 0 ? 0 : Math.abs(offX),
+            }}
+          />
+          {/* Top layer */}
+          {count === 2 && (
+            <div
+              className="absolute rounded-sm"
+              style={{
+                width: isHorizontal ? TILE_W : TILE_H,
+                height: isHorizontal ? TILE_H : TILE_W,
+                background: "linear-gradient(135deg, #82b860, #68a048)",
+                border: "0.5px solid #98c87c",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.1)",
+                top: offY > 0 ? offY : 0,
+                left: offX > 0 ? offX : 0,
+              }}
             />
-            {/* Top layer — brighter, offset for depth (only if stack has 2 tiles) */}
-            {tilesInStack === 2 && (
-              <rect
-                x={p.x + topDx}
-                y={p.y + topDy}
-                width={p.w}
-                height={p.h}
-                rx={1.5}
-                fill="#78A860"
-                stroke="#98C87C"
-                strokeWidth={0.5}
-                filter="url(#stackShadow)"
-              />
-            )}
-          </g>
-        );
-      })}
-    </svg>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }

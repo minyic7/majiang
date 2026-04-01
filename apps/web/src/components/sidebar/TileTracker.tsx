@@ -17,27 +17,27 @@ export default function TileTracker({ sections }: TileTrackerProps) {
   };
 
   return (
-    <div className="bg-white/[.04] border border-white/[.06] rounded-sm p-2">
-      <div className="text-[9px] text-white/28 font-medium tracking-wide uppercase mb-2">记牌器</div>
+    <div className="bg-white/[.04] border border-white/[.06] rounded-md p-3">
+      <div className="text-sm text-white/50 font-semibold tracking-wide uppercase mb-3">记牌器</div>
       {sections.map((section) => (
-        <div key={section.label} className="mb-2 last:mb-0">
+        <div key={section.label} className="mb-3 last:mb-0">
           <div
-            className="text-[9px] font-bold text-center mb-1 rounded-sm py-0.5"
+            className="text-sm font-bold text-center mb-1.5 rounded py-1"
             style={{ color: section.color, backgroundColor: section.color.replace(/[\d.]+\)$/, "0.15)") }}
           >
             {section.label}
           </div>
-          <div className={`grid gap-0.5 ${section.tiles.length <= 7 ? "grid-cols-7" : "grid-cols-9"}`}>
+          <div className={`grid gap-1 ${section.tiles.length <= 7 ? "grid-cols-7" : "grid-cols-9"}`}>
             {section.tiles.map((tile) => {
               const isUsed = used.has(tile.id);
               return (
                 <button
                   key={tile.id}
                   onClick={() => toggle(tile.id)}
-                  className={`text-center text-[7px] rounded-sm py-0.5 cursor-pointer select-none transition-colors ${
+                  className={`text-center text-sm rounded py-1 cursor-pointer select-none transition-colors font-medium ${
                     isUsed
-                      ? "bg-red-500/15 text-red-400/60 line-through"
-                      : "bg-white/[.06] text-white/35 hover:bg-white/[.14]"
+                      ? "bg-red-500/20 text-red-400/70 line-through"
+                      : "bg-white/[.08] text-white/50 hover:bg-white/[.18] hover:text-white/70"
                   }`}
                 >
                   {tile.display}

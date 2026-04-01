@@ -63,33 +63,61 @@ const MOCK_CHAT = [
 
 export default function GamePage() {
   const [selectedTile, setSelectedTile] = useState<number | null>(null);
-  const [showActions, setShowActions] = useState(false);
+  const [showActions, setShowActions] = useState(true);
   const [chatMessages, setChatMessages] = useState(MOCK_CHAT);
 
   const mockActions: ActionOption[] = [
     {
       id: "hu",
-      label: "自摸",
-      color: "rgba(120,230,120,1)",
-      tiles: [{ char: "發", highlight: true }],
+      label: "胡",
+      color: "rgba(255,80,80,1)",
+      tiles: [{ char: "三", highlight: true }],
       onClick: () => setShowActions(false),
     },
     {
-      id: "angang",
-      label: "暗杠",
+      id: "gang",
+      label: "杠",
       color: "rgba(230,185,80,1)",
-      tiles: [{ char: "發" }, { char: "發" }, { char: "發" }, { char: "發", highlight: true }],
+      tiles: [{ char: "三" }, { char: "三" }, { char: "三" }, { char: "三", highlight: true }],
+      onClick: () => setShowActions(false),
+    },
+    {
+      id: "peng",
+      label: "碰",
+      color: "rgba(140,185,255,1)",
+      tiles: [{ char: "三" }, { char: "三" }, { char: "三", highlight: true }],
+      onClick: () => setShowActions(false),
+    },
+    {
+      id: "chi1",
+      label: "吃 一二三",
+      color: "rgba(100,220,180,1)",
+      tiles: [{ char: "一" }, { char: "二" }, { char: "三", highlight: true }],
+      onClick: () => setShowActions(false),
+    },
+    {
+      id: "chi2",
+      label: "吃 二三四",
+      color: "rgba(100,220,180,1)",
+      tiles: [{ char: "二" }, { char: "三", highlight: true }, { char: "四" }],
+      onClick: () => setShowActions(false),
+    },
+    {
+      id: "chi3",
+      label: "吃 三四五",
+      color: "rgba(100,220,180,1)",
+      tiles: [{ char: "三", highlight: true }, { char: "四" }, { char: "五" }],
       onClick: () => setShowActions(false),
     },
   ];
 
   return (
-    <div className="h-screen bg-[#080f08] flex flex-col overflow-hidden">
+    <div className="h-screen bg-[#0a1208] flex flex-col overflow-hidden">
       <TopBar roomId="2048" roundLabel="东风局" playerCount={4} />
 
       <div className="flex-1 flex gap-2.5 p-2.5 items-stretch min-h-0 overflow-hidden">
         {/* Left sidebar */}
-        <div className="w-40 shrink-0 flex flex-col gap-1.5 bg-white/[.02] border border-white/[.07] rounded-xl p-2 overflow-y-auto">
+        <div className="w-52 shrink-0 flex flex-col gap-1.5 bg-white/[.02] border border-white/[.07] rounded-xl p-2 overflow-y-auto">
           <TileTracker sections={MOCK_TRACKER} />
           <ScoreBoard scores={MOCK_SCORES} />
           <RoundInfo
@@ -106,28 +134,28 @@ export default function GamePage() {
               {
                 name: "自己", seatWind: "南",
                 handCount: 14, handTiles: MOCK_HAND, drawnTile: MOCK_DRAWN,
-                discards: Array(12).fill(""),
+                discards: ["一","二","三","四","五","六","七","八","九","筒","条","中","發","白","东","南","西","北"],
                 melds: [["", "", ""]],
                 flowerCount: 2,
               },
               {
                 name: "西家", seatWind: "西",
                 handCount: 12,
-                discards: Array(10).fill(""),
+                discards: Array(16).fill(""),
                 melds: [["", "", ""]],
                 flowerCount: 3,
               },
               {
                 name: "对家", seatWind: "北",
                 handCount: 13,
-                discards: Array(9).fill(""),
+                discards: Array(18).fill(""),
                 melds: [["", "", ""]],
                 flowerCount: 2,
               },
               {
                 name: "下家", seatWind: "东",
                 handCount: 11,
-                discards: Array(8).fill(""),
+                discards: Array(14).fill(""),
                 melds: [["", "", ""]],
                 flowerCount: 0,
               },
@@ -138,6 +166,7 @@ export default function GamePage() {
             selectedTileId={selectedTile}
             actions={mockActions}
             actionVisible={showActions}
+            discardInfo={showActions ? { playerName: "上家", char: "三" } : null}
             discardHint={selectedTile !== null && !showActions}
             onSelectTile={(id) => {
               setSelectedTile(id);
@@ -158,7 +187,7 @@ export default function GamePage() {
         </div>
 
         {/* Right sidebar */}
-        <div className="w-44 shrink-0 flex flex-col gap-1.5 bg-white/[.02] border border-white/[.07] rounded-xl p-2 overflow-y-auto">
+        <div className="w-52 shrink-0 flex flex-col gap-1.5 bg-white/[.02] border border-white/[.07] rounded-xl p-2 overflow-y-auto">
           <ChatPanel
             messages={chatMessages}
             onSend={(text) => {

@@ -38,39 +38,39 @@ export default function ChatPanel({ messages, onSend, onEmoji }: ChatPanelProps)
   };
 
   return (
-    <div className="bg-white/[.04] border border-white/[.06] rounded-sm p-2 flex flex-col gap-1">
-      <div className="text-[9px] text-white/28 font-medium tracking-wide uppercase">聊天</div>
+    <div className="bg-white/[.04] border border-white/[.06] rounded-md p-3 flex flex-col gap-2">
+      <div className="text-sm text-white/50 font-semibold tracking-wide uppercase">聊天</div>
       {/* Message log */}
-      <div ref={logRef} className="flex flex-col gap-1 max-h-40 overflow-y-auto">
+      <div ref={logRef} className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
         {messages.map((m) => (
-          <div key={m.id} className={`text-[8px] pb-1 border-b border-white/[.06] leading-relaxed ${m.isMe ? "text-amber-400/55" : "text-white/28"}`}>
-            {m.sender}：{m.text}
+          <div key={m.id} className={`text-sm pb-1.5 border-b border-white/[.06] leading-relaxed ${m.isMe ? "text-amber-400/70" : "text-white/45"}`}>
+            <span className="font-medium">{m.sender}</span>：{m.text}
           </div>
         ))}
       </div>
       {/* Input */}
-      <div className="flex gap-1 items-center mt-1">
+      <div className="flex gap-1.5 items-center mt-1">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           placeholder="发送消息…"
-          className="flex-1 bg-white/[.05] border border-white/10 rounded px-2 py-1 text-[8px] text-white/40 placeholder:text-white/20 outline-none focus:border-white/20"
+          className="flex-1 min-w-0 bg-white/[.06] border border-white/[.12] rounded px-2.5 py-1.5 text-sm text-white/60 placeholder:text-white/25 outline-none focus:border-white/30 transition-colors"
         />
         <div className="relative">
           <button
             onClick={() => setShowEmoji((v) => !v)}
-            className="w-7 h-7 bg-white/[.06] border border-white/[.12] rounded flex items-center justify-center cursor-pointer text-sm shrink-0"
+            className="w-8 h-8 bg-white/[.06] border border-white/[.12] rounded flex items-center justify-center cursor-pointer text-base shrink-0 hover:bg-white/[.12] transition-colors"
           >
             😊
           </button>
           {showEmoji && (
-            <div className="absolute bottom-9 right-0 bg-[#1a2e1a] border border-white/15 rounded-lg p-2 flex flex-wrap gap-1.5 w-30 z-50 shadow-[0_4px_16px_rgba(0,0,0,.5)]">
+            <div className="absolute bottom-10 right-0 bg-[#1a2e1a] border border-white/15 rounded-lg p-2.5 flex flex-wrap gap-2 w-36 z-50 shadow-[0_4px_16px_rgba(0,0,0,.5)]">
               {EMOJIS.map((e) => (
                 <button
                   key={e.emoji}
                   onClick={() => { onEmoji?.(e.emoji); setShowEmoji(false); }}
-                  className="text-base cursor-pointer hover:scale-125 transition-transform"
+                  className="text-lg cursor-pointer hover:scale-125 transition-transform"
                   title={e.label}
                 >
                   {e.emoji}

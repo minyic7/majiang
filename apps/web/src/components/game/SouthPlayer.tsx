@@ -41,57 +41,38 @@ export default function SouthPlayer({
   onFlowerClick,
 }: SouthPlayerProps) {
   return (
-    <div className="bg-black/45 rounded-md p-2 flex flex-col gap-1.5 relative h-full">
-      {/* Info strip */}
-      <div className="flex gap-1.5 shrink-0 items-stretch h-10">
-        {/* Name + hand count */}
-        <div className="flex flex-col justify-between shrink-0 w-13">
-          <span className="text-[9px] font-medium text-amber-300/90 whitespace-nowrap">{name} · {seatWind}</span>
-          <span className="text-[8px] text-white/25">手牌 <span className="text-amber-400/80 font-medium">{handTiles.length + (drawnTile ? 1 : 0)}</span></span>
-        </div>
+    <div className="bg-black/10 rounded-md p-2 flex flex-col gap-1.5 relative h-full">
+      {/* Action modal — full screen overlay */}
+      <ActionBubbles
+        visible={actionVisible}
+        actions={actions}
+        discardInfo={discardInfo}
+        discardHint={discardHint}
+        onPass={onPass}
+      />
 
-        {/* Flower icon */}
-        <div className="flex flex-col justify-center items-center gap-1 shrink-0 w-8">
+      {/* Bottom: melds + hand, aligned at bottom */}
+      <div className="flex-1 min-h-0 flex items-end justify-center gap-3">
+        {/* Player info: name + flower count */}
+        <div className="shrink-0 flex flex-col items-center gap-0.5 pb-1">
           <span onClick={onFlowerClick} className="text-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity" title="我的花牌">
-            🌸{flowerCount > 0 && <sup className="text-[7px] text-green-400">{flowerCount}</sup>}
+            🌸{flowerCount > 0 && <sup className="text-xs text-green-400">{flowerCount}</sup>}
           </span>
+          <span className="text-xs font-medium text-amber-300/90 whitespace-nowrap">{name} · {seatWind}</span>
         </div>
-
         {/* Melds */}
-        <div className="bg-white/[.07] border border-white/[.13] rounded-sm p-1 w-28 shrink-0 flex flex-col gap-1">
-          <span className="text-[8px] text-white/35 font-medium block">碰 / 吃 / 杠</span>
-          <div className="flex gap-1 flex-wrap items-end">
-            {melds.flat().map((c, i) => (
-              <Tile key={i} char={c} variant="face" size="sm" />
-            ))}
-          </div>
+        <div className="shrink-0 border border-white/[.12] rounded-sm px-1.5 pt-4 pb-1 flex gap-2 items-end">
+          <span className="text-[11px] text-white/30 font-medium">副露</span>
+          {melds.map((meld, i) => (
+            <div key={i} className="flex gap-px">
+              {meld.map((c, j) => (
+                <Tile key={j} char={c} variant="face" size="lg" />
+              ))}
+            </div>
+          ))}
         </div>
-
-        {/* Discards */}
-        <div className="bg-white/[.07] border border-white/[.13] rounded-sm p-1 flex-1 min-w-0 flex flex-col gap-1 overflow-hidden">
-          <span className="text-[8px] text-white/35 font-medium block">弃牌区</span>
-          <div className="flex flex-wrap gap-px content-start">
-            {discards.map((c, i) => (
-              <Tile key={i} char={c} variant="face" size="sm" />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Action bubbles — floating above hand */}
-      <div className="absolute bottom-[calc(100%+6px)] left-0 right-0 z-50 px-2">
-        <ActionBubbles
-          visible={actionVisible}
-          actions={actions}
-          discardInfo={discardInfo}
-          discardHint={discardHint}
-          onPass={onPass}
-        />
-      </div>
-
-      {/* Hand strip */}
-      <div className="flex-1 min-h-0">
-        <div className="bg-white/[.07] border border-white/[.13] rounded-sm h-full flex items-center px-1.5 py-1 overflow-hidden">
+        {/* Hand tiles */}
+        <div className="shrink-0 pt-4 pb-1">
           <PlayerHand
             tiles={handTiles}
             drawnTile={drawnTile}

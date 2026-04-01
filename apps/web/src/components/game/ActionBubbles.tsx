@@ -30,60 +30,61 @@ export default function ActionBubbles({
 }: ActionBubblesProps) {
   if (!visible) return null;
 
-  return (
-    <div className="flex items-end gap-2 animate-[bubbleIn_0.16s_ease]">
-      {/* Discard info */}
-      {discardInfo && (
-        <>
-          <span className="text-[9px] text-white/40 self-center mr-0.5" style={{ textShadow: "0 1px 4px rgba(0,0,0,.9)" }}>
-            {discardInfo.playerName}打出
-          </span>
-          <Tile char={discardInfo.char} variant="face" size="md" highlight />
-          <div className="w-px h-10 bg-white/10 self-center mx-0.5" />
-        </>
-      )}
-
-      {/* Discard hint */}
-      {discardHint && (
-        <span className="text-[8px] text-amber-400/70" style={{ textShadow: "0 1px 4px rgba(0,0,0,.8)" }}>
+  // Discard hint — inline, no modal
+  if (discardHint && actions.length === 0) {
+    return (
+      <div className="flex justify-center">
+        <span className="text-[9px] text-amber-400/70" style={{ textShadow: "0 1px 4px rgba(0,0,0,.8)" }}>
           再次点击确认打出
         </span>
-      )}
-
-      {/* Action cards */}
-      {actions.map((action) => (
-        <ActionCard key={action.id} action={action} />
-      ))}
-
-      {/* Pass button */}
-      {onPass && (
-        <button
-          onClick={onPass}
-          className="cursor-pointer px-3 py-1.5 rounded-lg bg-black/20 shadow-[0_2px_8px_rgba(0,0,0,.2)] text-[10px] text-white/40 self-center hover:text-white/70 hover:bg-black/30 transition-colors"
-        >
-          过
-        </button>
-      )}
-    </div>
-  );
-}
-
-function ActionCard({ action }: { action: ActionOption }) {
-  return (
-    <div
-      onClick={action.onClick}
-      className="flex flex-col items-center gap-1 cursor-pointer px-2 py-1.5 rounded-lg bg-black/28 backdrop-blur-sm shadow-[0_6px_24px_rgba(0,0,0,.35),0_1px_3px_rgba(0,0,0,.2)] hover:-translate-y-0.5 transition-transform"
-    >
-      <div className="flex gap-0.5 items-end">
-        {action.tiles.map((t, i) => (
-          t.back
-            ? <Tile key={i} variant="back" size="md" />
-            : <Tile key={i} char={t.char} variant="face" size="md" highlight={t.highlight} />
-        ))}
       </div>
-      <span className="text-[9px] font-medium whitespace-nowrap tracking-wide" style={{ color: action.color }}>
-        {action.label}
-      </span>
+    );
+  }
+
+  // Full-screen modal overlay for claim actions
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-[fadeIn_0.15s_ease]">
+      <div className="flex flex-col items-center gap-6">
+        {/* Discarded tile info */}
+        {discardInfo && (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-white/50">{discardInfo.playerName} 打出</span>
+            <Tile char={discardInfo.char} variant="face" size="lg" highlight />
+          </div>
+        )}
+
+        {/* Action options */}
+        <div className="flex gap-4 flex-wrap justify-center">
+          {actions.map((action) => (
+            <div
+              key={action.id}
+              onClick={action.onClick}
+              className="flex flex-col items-center gap-2 cursor-pointer px-4 py-3 rounded-xl bg-white/[.06] hover:bg-white/[.12] transition-colors"
+            >
+              <div className="flex gap-1 items-end">
+                {action.tiles.map((t, i) => (
+                  t.back
+                    ? <Tile key={i} variant="back" size="lg" />
+                    : <Tile key={i} char={t.char} variant="face" size="lg" highlight={t.highlight} />
+                ))}
+              </div>
+              <span className="text-sm font-medium tracking-wide" style={{ color: action.color }}>
+                {action.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Pass button */}
+        {onPass && (
+          <button
+            onClick={onPass}
+            className="cursor-pointer px-6 py-2 rounded-lg bg-white/[.06] hover:bg-white/[.12] text-sm text-white/50 hover:text-white/80 transition-colors"
+          >
+            过
+          </button>
+        )}
+      </div>
     </div>
   );
 }

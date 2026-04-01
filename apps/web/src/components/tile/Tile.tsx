@@ -41,7 +41,7 @@ export default function Tile({
       : { width: s.w, height: s.h };
     return (
       <div
-        className={`shrink-0 rounded-sm border border-green-600/60 bg-green-700/70 ${className}`}
+        className={`shrink-0 rounded-sm bg-gradient-to-b from-[#4a8838] to-[#2d5c20] border border-[#5a9848] shadow-[0_2px_3px_rgba(0,0,0,0.2)] ${className}`}
         style={style}
       />
     );
@@ -62,10 +62,10 @@ export default function Tile({
   const baseClasses = [
     "shrink-0 rounded-sm flex items-center justify-center font-medium transition-all duration-150 relative",
     selected
-      ? "bg-gradient-to-b from-yellow-50 to-amber-200 border-2 border-amber-500 shadow-[0_0_0_1.5px_#EEB018] -translate-y-2 scale-110 z-10"
+      ? "bg-gradient-to-b from-[#fffde8] to-[#f5d060] border-2 border-amber-400 shadow-[0_0_8px_rgba(238,176,24,0.4)] -translate-y-2 scale-110 z-10"
       : highlight
-        ? "bg-gradient-to-b from-yellow-50 to-amber-100 border border-amber-500"
-        : "bg-gradient-to-b from-[#fafaf0] to-[#e8e4d4] border border-[#bbb]",
+        ? "bg-gradient-to-b from-[#fffce0] to-[#f0d870] border border-amber-400 shadow-sm"
+        : "bg-gradient-to-b from-[#fcfaf2] to-[#e8e0c8] border border-[#c8b890] shadow-[0_2px_3px_rgba(0,0,0,0.15)]",
     drawn ? "ml-3" : "",
     onClick ? "cursor-pointer hover:-translate-y-1" : "",
     className,
@@ -97,7 +97,7 @@ export default function Tile({
     >
       {rotate ? inner : <span className="text-neutral-800">{char}</span>}
       {drawn && (
-        <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[8px] text-amber-400/80 whitespace-nowrap">
+        <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[11px] text-amber-400/80 whitespace-nowrap">
           摸
         </span>
       )}

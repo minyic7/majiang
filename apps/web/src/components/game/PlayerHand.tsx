@@ -1,10 +1,9 @@
-import { useState } from "react";
 import Tile from "../tile/Tile.js";
 
 interface HandTile {
   id: number;
   char: string;
-  suit?: string; // for suit grouping gap
+  suit?: string;
 }
 
 interface PlayerHandProps {
@@ -16,54 +15,35 @@ interface PlayerHandProps {
 }
 
 export default function PlayerHand({ tiles, drawnTile, onSelect, onDiscard, selectedId }: PlayerHandProps) {
-  // Group tiles by suit for visual spacing
+  // Combine hand + drawn tile into one row, drawn tile at the end
+  const allTiles = drawnTile ? [...tiles, drawnTile] : tiles;
   let prevSuit: string | undefined;
 
   return (
-    <div className="flex items-center">
-      <div className="flex gap-0.5 items-center">
-        {tiles.map((t) => {
-          const needsGap = prevSuit !== undefined && t.suit !== undefined && t.suit !== prevSuit;
-          prevSuit = t.suit;
-          return (
-            <div key={t.id} className={needsGap ? "ml-1" : ""}>
-              <Tile
-                char={t.char}
-                variant="face"
-                size="lg"
-                selected={selectedId === t.id}
-                onClick={() => {
-                  if (selectedId === t.id) {
-                    // Second click = discard
-                    onDiscard?.(t.id);
-                  } else {
-                    onSelect?.(t.id);
-                  }
-                }}
-              />
-            </div>
-          );
-        })}
-      </div>
-      {/* Drawn tile — separated */}
-      {drawnTile && (
-        <div className="ml-3 flex items-center border-l border-white/10 pl-3">
-          <Tile
-            char={drawnTile.char}
-            variant="face"
-            size="lg"
-            drawn
-            selected={selectedId === drawnTile.id}
-            onClick={() => {
-              if (selectedId === drawnTile.id) {
-                onDiscard?.(drawnTile.id);
-              } else {
-                onSelect?.(drawnTile.id);
-              }
-            }}
-          />
-        </div>
-      )}
+    <div className="flex gap-0.5 items-center justify-center">
+      {allTiles.map((t, i) => {
+        const isDrawn = drawnTile && t.id === drawnTile.id;
+        const needsGap = !isDrawn && prevSuit !== undefined && t.suit !== undefined && t.suit !== prevSuit;
+        if (!isDrawn) prevSuit = t.suit;
+        return (
+          <div key={t.id} className={`${needsGap ? "ml-1" : ""} ${isDrawn ? "ml-2" : ""}`}>
+            <Tile
+              char={t.char}
+              variant="face"
+              size="lg"
+              selected={selectedId === t.id}
+              drawn={!!isDrawn}
+              onClick={() => {
+                if (selectedId === t.id) {
+                  onDiscard?.(t.id);
+                } else {
+                  onSelect?.(t.id);
+                }
+              }}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
