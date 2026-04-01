@@ -8,3 +8,6 @@ export * from "./types/ui.js";
 
 // Rule registry
 export * from "./rules/registry.js";
+
+// Rule sets
+export * from "./rules/fuzhou.js";
