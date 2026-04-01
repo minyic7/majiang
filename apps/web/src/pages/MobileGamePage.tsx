@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import TopBar from "../components/layout/TopBar.js";
 import Tile from "../components/tile/Tile.js";
 import TileWall from "../components/tile/TileWall.js";
 import PlayerHand from "../components/game/PlayerHand.js";
@@ -47,6 +48,7 @@ export default function MobileGamePage() {
     showActions,
     selectedTileId,
     availableActions,
+    roomId,
     handlePass,
     handleSelectTile,
     handleDiscardTile,
@@ -96,6 +98,22 @@ export default function MobileGamePage() {
 
   return (
     <div className="h-screen bg-gradient-to-br from-[#1a6030] to-[#145020] flex flex-col overflow-hidden p-1 gap-1 relative">
+      <TopBar
+        roomId={roomId ?? ""}
+        roundLabel={data.roundLabel}
+        playerCount={data.players.length}
+        onLeave={() => {
+          const socket = useGameStore.getState().socket;
+          if (socket) socket.disconnect();
+          useGameStore.getState().reset();
+          navigate("/");
+        }}
+        onSettings={() => {
+          alert(
+            `Room: ${roomId ?? "—"}\nRound: ${data.roundLabel}\nPlayers: ${data.players.length}`,
+          );
+        }}
+      />
       {/* Main row: West + (North + Center) + East */}
       <div className="flex-1 min-h-0 flex gap-1">
         {/* West player hand area */}

@@ -55,7 +55,18 @@ export default function GamePage() {
       <TopBar
         roomId={roomId ?? ""}
         roundLabel={data.roundLabel}
-        playerCount={4}
+        playerCount={data.players.length}
+        onLeave={() => {
+          const socket = useGameStore.getState().socket;
+          if (socket) socket.disconnect();
+          useGameStore.getState().reset();
+          navigate("/");
+        }}
+        onSettings={() => {
+          alert(
+            `Room: ${roomId ?? "—"}\nRound: ${data.roundLabel}\nPlayers: ${data.players.length}`,
+          );
+        }}
       />
 
       <div className="flex-1 flex gap-2.5 p-2.5 items-stretch min-h-0 overflow-hidden">
