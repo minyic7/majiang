@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import TopBar from "../components/layout/TopBar.js";
@@ -57,7 +57,22 @@ export default function MobileGamePage() {
 
   const roundResult = useGameStore((s) => s.roundResult);
   const chatMessages = useGameStore((s) => s.chatMessages);
+  const connected = useGameStore((s) => s.connected);
+  const errorMessage = useGameStore((s) => s.errorMessage);
   const navigate = useNavigate();
+
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (errorMessage) {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => {
+        useGameStore.getState().setErrorMessage(null);
+      }, 5000);
+    }
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, [errorMessage]);
   const trackerSections = useTileTracker();
   const actionRemaining = useActionTimer();
 
@@ -531,6 +546,24 @@ export default function MobileGamePage() {
             navigate("/");
           }}
         />
+      )}
+
+      {!connected && (
+        <div className="fixed inset-0 z-[300] bg-black/50 flex items-center justify-center">
+          <span className="text-white text-lg font-medium">连接中断，重连中...</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[400] bg-red-900/90 border border-red-500 text-red-200 px-4 py-2 rounded shadow-lg flex items-center gap-2">
+          <span>{errorMessage}</span>
+          <button
+            onClick={() => useGameStore.getState().setErrorMessage(null)}
+            className="text-red-300 hover:text-white ml-1"
+          >
+            ✕
+          </button>
+        </div>
       )}
     </div>
   );

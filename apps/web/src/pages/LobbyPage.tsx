@@ -39,7 +39,7 @@ export default function LobbyPage() {
         setRuleSets(data);
         if (data.length > 0) setRuleSetId(data[0].id);
       })
-      .catch(() => {});
+      .catch(() => setErrorMessage("加载失败"));
   }, []);
 
   // Fetch rooms
@@ -47,7 +47,7 @@ export default function LobbyPage() {
     fetch(`${API_BASE}/api/rooms`)
       .then((r) => r.json())
       .then((data: RoomListItem[]) => setRooms(data.filter((r) => !r.started)))
-      .catch(() => {});
+      .catch(() => setErrorMessage("加载失败"));
   }, []);
 
   useEffect(() => {
