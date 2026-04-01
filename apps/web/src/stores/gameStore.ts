@@ -36,6 +36,10 @@ interface GameStore {
   // Round result
   roundResult: RoundResult | null;
 
+  // Chat
+  chatMessages: { id: string; sender: string; text: string; isMe?: boolean }[];
+  addChatMessage: (msg: { sender: string; text: string }) => void;
+
   // UI state
   selectedTileId: number | null;
   /** Epoch ms when the current action window expires (server timeout) */
@@ -78,6 +82,7 @@ const initialState = {
   gameState: null,
   availableActions: null,
   roundResult: null,
+  chatMessages: [],
   selectedTileId: null,
   actionDeadline: null,
   socket: null,
@@ -86,6 +91,13 @@ const initialState = {
 export const useGameStore = create<GameStore>((set, get) => ({
   ...initialState,
 
+  addChatMessage: ({ sender, text }) =>
+    set((state) => ({
+      chatMessages: [
+        ...state.chatMessages,
+        { id: String(Date.now()), sender, text, isMe: sender === state.playerName },
+      ],
+    })),
   setConnected: (connected) => set({ connected }),
   setRoom: (roomId, myIndex) => set({ roomId, myIndex }),
   setGameState: (gameState) => set({ gameState }),

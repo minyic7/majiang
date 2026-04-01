@@ -66,6 +66,10 @@ export function useSocket() {
       useGameStore.getState().setErrorMessage(msg);
     });
 
+    socket.on("chatMessage", ({ sender, text }) => {
+      useGameStore.getState().addChatMessage({ sender, text });
+    });
+
     return () => {
       socket.disconnect();
       socketRef.current = null;
