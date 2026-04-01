@@ -51,7 +51,7 @@ export default function ActionBubbles({
         )}
 
         {/* Action cards row */}
-        <div className="flex gap-2 flex-wrap justify-center">
+        <div className="flex gap-2 flex-wrap justify-center max-w-[calc(100vw-1rem)] px-2">
           {actions.map((action) => (
             <div
               key={action.id}
