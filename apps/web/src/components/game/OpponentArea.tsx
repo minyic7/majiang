@@ -42,7 +42,7 @@ export default function OpponentArea({
               {discards.map((c, i) => <Tile key={i} char={c} variant="face" size="md" />)}
             </div>
           </Section>
-          <Section label="副露区" className="w-24 shrink-0">
+          <Section label="吃碰杠" className="w-24 shrink-0">
             <div className="flex flex-wrap gap-px mt-0.5">
               {melds.flat().map((c, i) => <Tile key={i} char={c} variant="face" size="md" />)}
             </div>
@@ -78,14 +78,15 @@ export default function OpponentArea({
           <Badge count={handCount} />
           <FlowerIcon count={flowerCount} onClick={onFlowerClick} />
         </div>
-        <Section label="弃牌" className="flex-[2] min-h-0 overflow-hidden">
+        <Section label="弃牌" className="flex-1 min-h-0 overflow-hidden">
           <div className="flex flex-col gap-px mt-0.5 items-start">
             {discards.map((c, i) => (
               <Tile key={i} char={c} variant="face" size="sm" rotate={rotate} />
             ))}
           </div>
         </Section>
-        <Section label="副露" className="flex-1 min-h-0 overflow-hidden">
+        {melds.length > 0 && (
+        <Section label="吃碰杠" className="shrink-0 overflow-hidden">
           <div className="flex flex-col gap-1 mt-1">
             {melds.map((meld, i) => (
               <div key={i} className="flex gap-px items-center">
@@ -96,6 +97,7 @@ export default function OpponentArea({
             ))}
           </div>
         </Section>
+        )}
       </div>
     </div>
   );
