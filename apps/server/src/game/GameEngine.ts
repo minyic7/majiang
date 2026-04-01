@@ -162,6 +162,7 @@ export class GameEngine {
       currentRound: gs.currentRound,
       prevalentWind: gs.prevalentWind,
       roundInWind: gs.roundInWind,
+      scores: [...this.scores],
     };
   }
 

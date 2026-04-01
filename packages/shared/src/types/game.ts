@@ -47,4 +47,5 @@ export interface GameState {
   currentRound: number;
   prevalentWind: "east" | "south" | "west" | "north";
   roundInWind: number;
+  scores?: number[];
 }

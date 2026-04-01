@@ -133,11 +133,10 @@ export function useGameData() {
           }
         : null;
 
-    // Score data — use cumulative scores from roundResult if available
-    const roundResult = useGameStore.getState().roundResult;
+    // Score data — use live cumulative scores from server state
     const scores = gameState.players.map((p, i) => ({
       name: p.name,
-      score: roundResult?.scores[i] ?? 0,
+      score: gameState.scores?.[i] ?? 0,
       isMe: i === gameState.myIndex,
     }));
 
