@@ -1,5 +1,40 @@
-import { ActionType } from "@majiang/shared";
+import { ActionType, tileKey } from "@majiang/shared";
 import type { GameAction, AvailableActions, TileInstance } from "@majiang/shared";
+
+/**
+ * Score a tile based on how useful it is in the hand.
+ * Higher score = more valuable = keep it.
+ */
+export function scoreTile(tile: TileInstance, hand: TileInstance[]): number {
+  let score = 0;
+  const key = tileKey(tile.tile);
+
+  // Pairs are valuable
+  const matching = hand.filter((t) => tileKey(t.tile) === key).length;
+  score += matching * 10;
+
+  // Adjacent suited tiles are valuable (potential sequences)
+  if (tile.tile.kind === "suited") {
+    const suit = tile.tile.suit;
+    const val = tile.tile.value;
+    const hasAdj1 = hand.some(
+      (t) =>
+        t.tile.kind === "suited" &&
+        t.tile.suit === suit &&
+        Math.abs(t.tile.value - val) === 1
+    );
+    const hasAdj2 = hand.some(
+      (t) =>
+        t.tile.kind === "suited" &&
+        t.tile.suit === suit &&
+        Math.abs(t.tile.value - val) === 2
+    );
+    if (hasAdj1) score += 5;
+    if (hasAdj2) score += 2;
+  }
+
+  return score;
+}
 
 export class BotPlayer {
   static choosePostDrawAction(
@@ -7,7 +42,7 @@ export class BotPlayer {
     hand: TileInstance[],
     playerIndex: number
   ): GameAction {
-    // Priority: Hu > AnGang > Discard
+    // Priority: Hu > AnGang > BuGang > Discard
     if (actions.canHu) {
       return { type: ActionType.Hu, playerIndex };
     }
@@ -28,13 +63,14 @@ export class BotPlayer {
       };
     }
 
-    // Discard a random tile
+    // Discard the tile with the lowest score
     if (actions.canDiscard && hand.length > 0) {
-      const randomIndex = Math.floor(Math.random() * hand.length);
+      const scored = hand.map((t) => ({ tile: t, score: scoreTile(t, hand) }));
+      scored.sort((a, b) => a.score - b.score);
       return {
         type: ActionType.Discard,
         playerIndex,
-        tile: hand[randomIndex],
+        tile: scored[0].tile,
       };
     }
 
@@ -50,17 +86,35 @@ export class BotPlayer {
     actions: AvailableActions,
     playerIndex: number
   ): GameAction {
-    // Priority: Hu > Peng > Pass (no chi for basic bot)
+    // Priority: Hu > Peng > MingGang > Chi > Pass
     if (actions.canHu) {
       return { type: ActionType.Hu, playerIndex };
     }
 
     if (actions.canPeng) {
-      return { type: ActionType.Peng, playerIndex, targetTile: undefined as never };
+      return {
+        type: ActionType.Peng,
+        playerIndex,
+        targetTile: undefined as never,
+      };
     }
 
     if (actions.canMingGang) {
-      return { type: ActionType.MingGang, playerIndex, targetTile: undefined as never };
+      return {
+        type: ActionType.MingGang,
+        playerIndex,
+        targetTile: undefined as never,
+      };
+    }
+
+    if (actions.chiOptions.length > 0) {
+      const pair = actions.chiOptions[0] as [TileInstance, TileInstance];
+      return {
+        type: ActionType.Chi,
+        playerIndex,
+        tiles: pair,
+        targetTile: undefined as never,
+      };
     }
 
     return { type: ActionType.Pass, playerIndex };
