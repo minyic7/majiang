@@ -137,6 +137,7 @@ export default function RoomPage() {
         <button
           onClick={handleAddBot}
           disabled={playerCount >= 4}
+          title={playerCount >= 4 ? "房间已满" : undefined}
           className="flex-1 bg-amber-600 hover:bg-amber-500 disabled:bg-neutral-600 disabled:text-neutral-400 text-white font-semibold py-2 rounded transition-colors"
         >
           Add Bot
@@ -144,6 +145,7 @@ export default function RoomPage() {
         <button
           onClick={handleStartGame}
           disabled={playerCount < 4}
+          title={playerCount < 4 ? "需要4位玩家" : undefined}
           className="flex-1 bg-green-700 hover:bg-green-600 disabled:bg-neutral-600 disabled:text-neutral-400 text-white font-semibold py-2 rounded transition-colors"
         >
           Start Game
