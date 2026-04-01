@@ -51,6 +51,8 @@ export function useSocket() {
     });
 
     socket.on("gameOver", (result) => {
+      useGameStore.getState().setAvailableActions(null);
+      useGameStore.getState().setActionDeadline(null);
       useGameStore.getState().setRoundResult(result);
     });
 

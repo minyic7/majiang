@@ -103,7 +103,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setGameState: (gameState) => set({ gameState }),
   setAvailableActions: (actions) => set({ availableActions: actions }),
   setRoundResult: (result) => set({ roundResult: result }),
-  clearRoundResult: () => set({ roundResult: null }),
+  clearRoundResult: () => set({ roundResult: null, selectedTileId: null, availableActions: null, actionDeadline: null }),
   setRoomInfo: (room) => set({ roomInfo: room }),
   setErrorMessage: (msg) => set({ errorMessage: msg }),
   setPlayerName: (name) => set({ playerName: name }),
