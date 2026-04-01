@@ -146,6 +146,11 @@ export function registerSocketHandlers(
           return;
         }
 
+        if (room.state === "finished") {
+          socket.emit("actionError", { message: "Game is already finished", code: "GAME_FINISHED" });
+          return;
+        }
+
         room.state = "playing";
         room.engine.resetForNextRound().catch((err) => {
           const message = err instanceof Error ? err.message : "Game error";
