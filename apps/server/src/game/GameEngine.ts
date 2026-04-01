@@ -50,6 +50,7 @@ export class GameEngine {
   private lianZhuangCount = 0;
   private scores: number[] = [0, 0, 0, 0];
   private gangDrawPending = false;
+  private lastWinnerId: number | null = null;
   constructor(ruleSet: RuleSet, players: PlayerInfo[], callbacks: GameEngineCallbacks = {}) {
     this.ruleSet = ruleSet;
     this.players = players;
@@ -73,12 +74,52 @@ export class GameEngine {
       dealerIndex,
       lastDiscard: null,
       ruleSetId: ruleSet.id,
+      currentRound: 1,
+      prevalentWind: "east",
+      roundInWind: 1,
     };
   }
 
   // --- Public API ---
 
   async startGame(): Promise<void> {
+    this.deal();
+    await this.playLoop();
+  }
+
+  /** Reset state and start the next round, preserving cumulative scores */
+  async resetForNextRound(): Promise<void> {
+    const dealerResult = this.ruleSet.getNextDealer(
+      this.gameState.dealerIndex,
+      this.lastWinnerId,
+      { lianZhuangCount: this.lianZhuangCount }
+    );
+
+    this.gameState.dealerIndex = dealerResult.nextDealer;
+    this.lianZhuangCount = dealerResult.nextLianZhuang;
+
+    // Increment round counter
+    this.gameState.currentRound++;
+
+    // Update wind rotation: every 4 rounds, wind changes
+    const windOrder = ["east", "south", "west", "north"] as const;
+    this.gameState.prevalentWind = windOrder[Math.floor((this.gameState.currentRound - 1) / 4) % 4];
+    this.gameState.roundInWind = ((this.gameState.currentRound - 1) % 4) + 1;
+
+    // Update seat winds based on new dealer
+    for (let i = 0; i < 4; i++) {
+      this.gameState.players[i].seatWind = SEAT_WINDS[(i - dealerResult.nextDealer + 4) % 4];
+      this.gameState.players[i].isDealer = i === dealerResult.nextDealer;
+    }
+
+    // Reset per-round state
+    this.gameState.lastDiscard = null;
+    this.gangDrawPending = false;
+    this.lastWinnerId = null;
+    this.gameState.goldenTile = undefined;
+    this.gameState.flippedTile = undefined;
+
+    // Re-deal and play
     this.deal();
     await this.playLoop();
   }
@@ -114,6 +155,9 @@ export class GameEngine {
       myIndex: playerIndex,
       goldenTile: gs.goldenTile,
       flippedTile: gs.flippedTile,
+      currentRound: gs.currentRound,
+      prevalentWind: gs.prevalentWind,
+      roundInWind: gs.roundInWind,
     };
   }
 
@@ -576,6 +620,7 @@ export class GameEngine {
     }
 
     this.gameState.phase = GamePhase.Finished;
+    this.lastWinnerId = playerIndex;
     this.broadcastState();
 
     this.callbacks.onGameOver?.({
@@ -663,6 +708,7 @@ export class GameEngine {
 
   private endGameDraw(): void {
     this.gameState.phase = GamePhase.Draw;
+    this.lastWinnerId = null;
     this.broadcastState();
     this.callbacks.onGameOver?.({
       winnerId: null,

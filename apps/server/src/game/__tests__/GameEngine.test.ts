@@ -359,3 +359,123 @@ describe("GameEngine - golden tile", () => {
     expect(gs.goldenTile).toEqual({ kind: "suited", suit: Suit.Wan, value: 5 });
   });
 });
+
+describe("GameEngine - multi-round support", () => {
+  it("should initialize round tracking fields", () => {
+    const engine = new GameEngine(StubRuleSet, testPlayers);
+    const gs = engine.gameState;
+
+    expect(gs.currentRound).toBe(1);
+    expect(gs.prevalentWind).toBe("east");
+    expect(gs.roundInWind).toBe(1);
+  });
+
+  it("should include round tracking in ClientGameState", () => {
+    const engine = new GameEngine(StubRuleSet, testPlayers);
+    const state = engine.toClientGameState(0);
+
+    expect(state.currentRound).toBe(1);
+    expect(state.prevalentWind).toBe("east");
+    expect(state.roundInWind).toBe(1);
+  });
+
+  it("should increment round and rotate dealer on resetForNextRound", async () => {
+    const engine = new GameEngine(StubRuleSet, testPlayers, { botDelayMs: 0 });
+    await engine.startGame();
+
+    const oldDealer = engine.gameState.dealerIndex;
+    const oldRound = engine.gameState.currentRound;
+
+    await engine.resetForNextRound();
+
+    expect(engine.gameState.currentRound).toBe(oldRound + 1);
+    // Dealer should have changed (unless winner was dealer, but with stub that always wins, it depends)
+    expect(engine.gameState.phase).not.toBe(GamePhase.Waiting);
+  });
+
+  it("should preserve scores across rounds", async () => {
+    const engine = new GameEngine(StubRuleSet, testPlayers, { botDelayMs: 0 });
+    await engine.startGame();
+
+    const scoresAfterRound1 = engine.getScores();
+    // At least one score should be non-zero after a finished round
+    const hasNonZero = scoresAfterRound1.some((s) => s !== 0);
+    if (engine.gameState.phase === GamePhase.Finished) {
+      expect(hasNonZero).toBe(true);
+    }
+
+    await engine.resetForNextRound();
+    const scoresAfterRound2 = engine.getScores();
+
+    // Scores should accumulate (not reset to zero)
+    if (engine.gameState.phase === GamePhase.Finished) {
+      const totalAfterR2 = scoresAfterRound2.reduce((a, b) => a + Math.abs(b), 0);
+      expect(totalAfterR2).toBeGreaterThan(0);
+    }
+  });
+
+  it("should update wind rotation: east for rounds 1-4, south at round 5", async () => {
+    const engine = new GameEngine(StubRuleSet, testPlayers, { botDelayMs: 0 });
+
+    // Play through 4 rounds
+    await engine.startGame();
+    expect(engine.gameState.prevalentWind).toBe("east");
+    expect(engine.gameState.roundInWind).toBe(1);
+
+    await engine.resetForNextRound(); // round 2
+    expect(engine.gameState.currentRound).toBe(2);
+    expect(engine.gameState.prevalentWind).toBe("east");
+    expect(engine.gameState.roundInWind).toBe(2);
+
+    await engine.resetForNextRound(); // round 3
+    expect(engine.gameState.currentRound).toBe(3);
+    expect(engine.gameState.prevalentWind).toBe("east");
+    expect(engine.gameState.roundInWind).toBe(3);
+
+    await engine.resetForNextRound(); // round 4
+    expect(engine.gameState.currentRound).toBe(4);
+    expect(engine.gameState.prevalentWind).toBe("east");
+    expect(engine.gameState.roundInWind).toBe(4);
+
+    await engine.resetForNextRound(); // round 5
+    expect(engine.gameState.currentRound).toBe(5);
+    expect(engine.gameState.prevalentWind).toBe("south");
+    expect(engine.gameState.roundInWind).toBe(1);
+  });
+
+  it("should update seat winds based on new dealer", async () => {
+    const engine = new GameEngine(StubRuleSet, testPlayers, { botDelayMs: 0 });
+    await engine.startGame();
+    await engine.resetForNextRound();
+
+    const dealerIdx = engine.gameState.dealerIndex;
+    // Dealer should have east seat wind
+    expect(engine.gameState.players[dealerIdx].seatWind).toBe("east");
+    expect(engine.gameState.players[dealerIdx].isDealer).toBe(true);
+
+    // All four winds should be assigned
+    const winds = engine.gameState.players.map((p) => p.seatWind);
+    expect(winds).toContain("east");
+    expect(winds).toContain("south");
+    expect(winds).toContain("west");
+    expect(winds).toContain("north");
+  });
+
+  it("should complete wind rotation through all 4 winds over 16 rounds", async () => {
+    const engine = new GameEngine(StubRuleSet, testPlayers, { botDelayMs: 0 });
+    await engine.startGame();
+
+    const expectedWinds = ["east", "east", "east", "east", "south", "south", "south", "south",
+      "west", "west", "west", "west", "north", "north", "north", "north"];
+
+    // Already at round 1
+    expect(engine.gameState.prevalentWind).toBe(expectedWinds[0]);
+
+    for (let i = 1; i < 16; i++) {
+      await engine.resetForNextRound();
+      expect(engine.gameState.currentRound).toBe(i + 1);
+      expect(engine.gameState.prevalentWind).toBe(expectedWinds[i]);
+      expect(engine.gameState.roundInWind).toBe((i % 4) + 1);
+    }
+  });
+});

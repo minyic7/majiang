@@ -134,7 +134,27 @@ export function registerSocketHandlers(
     });
 
     socket.on("nextRound", () => {
-      console.log(`nextRound requested by ${socket.id} — not yet implemented`);
+      try {
+        const mapping = socketToRoom.get(socket.id);
+        if (!mapping) {
+          socket.emit("actionError", { message: "Not in a room", code: "NOT_IN_ROOM" });
+          return;
+        }
+        const room = roomManager.getRoom(mapping.roomId);
+        if (!room || !room.engine) {
+          socket.emit("actionError", { message: "Game not in progress", code: "NO_GAME" });
+          return;
+        }
+
+        room.state = "playing";
+        room.engine.resetForNextRound().catch((err) => {
+          const message = err instanceof Error ? err.message : "Game error";
+          io.to(room.id).emit("error", message);
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        socket.emit("actionError", { message, code: "NEXT_ROUND_ERROR" });
+      }
     });
 
     socket.on("disconnect", () => {
@@ -181,7 +201,11 @@ function buildCallbacks(
     },
     onGameOver: (result) => {
       io.to(room.id).emit("gameOver", result);
-      room.state = "finished";
+      // Only transition to finished after all 16 rounds are complete
+      const currentRound = room.engine?.gameState.currentRound ?? 1;
+      if (currentRound >= 16) {
+        room.state = "finished";
+      }
     },
   };
 }

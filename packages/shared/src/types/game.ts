@@ -44,4 +44,7 @@ export interface GameState {
   ruleSetId: string;
   goldenTile?: Tile;
   flippedTile?: Tile;
+  currentRound: number;
+  prevalentWind: "east" | "south" | "west" | "north";
+  roundInWind: number;
 }
