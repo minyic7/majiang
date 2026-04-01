@@ -269,7 +269,21 @@ export class GameEngine {
 
       if (postDrawAction.type === ActionType.BuGang) {
         this.executeBuGang(turn, postDrawAction.tile);
-        this.gangDrawPending = true;
+        this.broadcastState();
+
+        // Give others a window to claim hu (抢杠胡 / robbing the kong)
+        const buGangTile = postDrawAction.tile;
+        const huClaim = await this.handleBuGangResponses(turn, buGangTile);
+
+        if (huClaim) {
+          // Someone claimed hu — revert the buGang and process hu
+          this.revertBuGang(turn, buGangTile);
+          this.handleHu(huClaim.playerIndex, buGangTile, false, true);
+          if (this.gameState.phase !== GamePhase.Playing) return;
+        } else {
+          // All passed — proceed with gang draw
+          this.gangDrawPending = true;
+        }
         continue;
       }
 
@@ -470,6 +484,85 @@ export class GameEngine {
     return result;
   }
 
+  /**
+   * After a buGang, give other players a window to claim hu (抢杠胡).
+   * Only hu is allowed — no peng/chi/gang on a buGang tile.
+   */
+  private async handleBuGangResponses(
+    gangPlayerIndex: number,
+    tile: TileInstance
+  ): Promise<{ playerIndex: number; action: GameAction } | null> {
+    const respondingPlayers: number[] = [];
+
+    for (let i = 0; i < 4; i++) {
+      if (i === gangPlayerIndex) continue;
+
+      const player = this.gameState.players[i];
+      const winResult = this.ruleSet.checkWin(player, tile, {
+        isSelfDraw: false,
+        isFirstAction: player.discards.length === 0 && player.melds.length === 0,
+        isDealer: player.isDealer,
+        isRobbingKong: true,
+        extra: { goldenTile: this.gameState.goldenTile },
+      });
+
+      if (winResult.isWin) {
+        const huOnlyActions: AvailableActions = {
+          canDraw: false,
+          canDiscard: false,
+          canHu: true,
+          canPeng: false,
+          canMingGang: false,
+          canPass: true,
+          chiOptions: [],
+          anGangOptions: [],
+          buGangOptions: [],
+        };
+        respondingPlayers.push(i);
+        this.callbacks.onActionRequired?.(i, huOnlyActions);
+      }
+    }
+
+    if (respondingPlayers.length === 0) return null;
+
+    const resolver = new ActionResolver(respondingPlayers, gangPlayerIndex);
+    this.actionResolver = resolver;
+
+    // Bots auto-respond: always claim hu when available
+    for (const p of respondingPlayers) {
+      if (this.players[p].isBot) {
+        const botDelay = this.callbacks.botDelayMs ?? BotPlayer.getThinkDelay();
+        setTimeout(() => {
+          resolver.submitAction(p, { type: ActionType.Hu, playerIndex: p });
+        }, botDelay);
+      }
+    }
+
+    const result = await resolver.waitForResponses(ACTION_TIMEOUT_MS);
+    this.actionResolver = null;
+
+    // Only hu claims are valid — filter out anything else
+    if (result && result.action.type === ActionType.Hu) {
+      return result;
+    }
+    return null;
+  }
+
+  /**
+   * Revert a buGang back to a peng meld (used when someone claims 抢杠胡).
+   * The 4th tile is removed from the meld — it becomes the winning tile for the hu claimer.
+   */
+  private revertBuGang(playerIndex: number, tile: TileInstance): void {
+    const player = this.gameState.players[playerIndex];
+    const meldIdx = player.melds.findIndex(
+      (m) => m.type === MeldType.BuGang && m.tiles.some((t) => t.id === tile.id)
+    );
+    if (meldIdx === -1) return;
+
+    player.melds[meldIdx].type = MeldType.Peng;
+    player.melds[meldIdx].tiles.pop();
+  }
+
   // --- Execute Actions ---
 
   private executeDiscard(playerIndex: number, tile: TileInstance): void {
@@ -592,13 +685,13 @@ export class GameEngine {
     this.gameState.lastDiscard = null;
   }
 
-  private handleHu(playerIndex: number, winningTile: TileInstance, isSelfDraw: boolean): boolean {
+  private handleHu(playerIndex: number, winningTile: TileInstance, isSelfDraw: boolean, isRobbingKong = false): boolean {
     const player = this.gameState.players[playerIndex];
     const winResult = this.ruleSet.checkWin(player, winningTile, {
       isSelfDraw,
       isFirstAction: player.discards.length === 0 && player.melds.length === 0,
       isDealer: player.isDealer,
-      isRobbingKong: false,
+      isRobbingKong,
       extra: { goldenTile: this.gameState.goldenTile },
     });
 
@@ -610,7 +703,7 @@ export class GameEngine {
       winResult,
       {
         isSelfDraw,
-        discarderIndex: isSelfDraw ? null : this.gameState.lastDiscard?.playerIndex ?? null,
+        discarderIndex: isSelfDraw ? null : (isRobbingKong ? this.gameState.currentTurn : this.gameState.lastDiscard?.playerIndex ?? null),
         extra: { goldenTile: this.gameState.goldenTile, dealerIndex: this.gameState.dealerIndex },
       }
     );
