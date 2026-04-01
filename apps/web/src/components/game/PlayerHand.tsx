@@ -21,7 +21,7 @@ export default function PlayerHand({ tiles, drawnTile, onSelect, onDiscard, sele
   let prevSuit: string | undefined;
 
   return (
-    <div className="flex gap-0.5 items-center justify-center">
+    <div className="flex gap-0.5 items-center justify-center min-w-0 flex-shrink overflow-x-auto">
       {allTiles.map((t, i) => {
         const isDrawn = drawnTile && t.id === drawnTile.id;
         const needsGap = !isDrawn && prevSuit !== undefined && t.suit !== undefined && t.suit !== prevSuit;

@@ -91,9 +91,9 @@ export default function MobileGamePage() {
       {/* Main row: West + (North + Center) + East */}
       <div className="flex-1 min-h-0 flex gap-1">
         {/* West player hand area */}
-        <div className="shrink-0 bg-black/10 rounded px-1 py-1 flex flex-col items-center justify-center gap-1 overflow-hidden">
+        <div className="shrink-0 bg-black/10 rounded px-1 py-1 flex flex-col items-center justify-center gap-1 overflow-hidden max-h-full">
           <span
-            className="text-[11px] text-white/60 font-medium"
+            className="text-[11px] text-white/60 font-medium truncate max-w-[1.2em]"
             style={{ writingMode: "vertical-rl" }}
           >
             {west.name}
@@ -112,15 +112,15 @@ export default function MobileGamePage() {
               </sup>
             </span>
           )}
-          <div className="flex flex-col gap-px items-center">
-            {Array.from({ length: west.handCount }, (_, i) => (
+          <div className="flex flex-col gap-px items-center flex-1 min-h-0 overflow-hidden">
+            {Array.from({ length: Math.min(west.handCount, 13) }, (_, i) => (
               <Tile key={i} variant="back" size="sm" rotate={-90} />
             ))}
           </div>
           {west.melds.map((meld, i) => (
             <div
               key={i}
-              className="flex flex-col gap-px border border-white/[.12] rounded-sm p-0.5"
+              className="flex flex-col gap-px border border-white/[.12] rounded-sm p-0.5 shrink-0"
             >
               {meld.map((c, j) => (
                 <Tile
@@ -138,16 +138,16 @@ export default function MobileGamePage() {
         {/* Center column: North + Center table */}
         <div className="flex-1 min-w-0 flex flex-col gap-1">
           {/* North player hand area */}
-          <div className="shrink-0 bg-black/10 rounded px-2 py-1 flex items-end justify-center gap-2">
-            <div className="shrink-0 flex gap-px items-end">
-              {Array.from({ length: north.handCount }, (_, i) => (
+          <div className="shrink-0 bg-black/10 rounded px-2 py-1 flex items-end justify-center gap-2 overflow-hidden">
+            <div className="flex gap-px items-end min-w-0 overflow-hidden flex-shrink">
+              {Array.from({ length: Math.min(north.handCount, 13) }, (_, i) => (
                 <Tile key={i} variant="back" size="sm" />
               ))}
             </div>
             {north.melds.map((meld, i) => (
               <div
                 key={i}
-                className="flex gap-px border border-white/[.12] rounded-sm px-0.5 py-0.5"
+                className="flex gap-px border border-white/[.12] rounded-sm px-0.5 py-0.5 shrink-0"
               >
                 {meld.map((c, j) => (
                   <Tile key={j} char={c} variant="face" size="sm" />
@@ -265,9 +265,9 @@ export default function MobileGamePage() {
         {/* end center column */}
 
         {/* East player hand area */}
-        <div className="shrink-0 bg-black/10 rounded px-1 py-1 flex flex-col items-center justify-center gap-1 overflow-hidden">
+        <div className="shrink-0 bg-black/10 rounded px-1 py-1 flex flex-col items-center justify-center gap-1 overflow-hidden max-h-full">
           <span
-            className="text-[11px] text-white/60 font-medium"
+            className="text-[11px] text-white/60 font-medium truncate max-w-[1.2em]"
             style={{ writingMode: "vertical-rl" }}
           >
             {east.name}
@@ -286,15 +286,15 @@ export default function MobileGamePage() {
               </sup>
             </span>
           )}
-          <div className="flex flex-col gap-px items-center">
-            {Array.from({ length: east.handCount }, (_, i) => (
+          <div className="flex flex-col gap-px items-center flex-1 min-h-0 overflow-hidden">
+            {Array.from({ length: Math.min(east.handCount, 13) }, (_, i) => (
               <Tile key={i} variant="back" size="sm" rotate={90} />
             ))}
           </div>
           {east.melds.map((meld, i) => (
             <div
               key={i}
-              className="flex flex-col gap-px border border-white/[.12] rounded-sm p-0.5"
+              className="flex flex-col gap-px border border-white/[.12] rounded-sm p-0.5 shrink-0"
             >
               {meld.map((c, j) => (
                 <Tile
@@ -312,7 +312,7 @@ export default function MobileGamePage() {
 
       {/* Row 2: South player — melds + hand + icons */}
       <div className="shrink-0 bg-black/10 rounded px-1 py-1">
-        <div className="flex items-end justify-center gap-2">
+        <div className="flex items-end justify-center gap-2 min-w-0 overflow-hidden">
           {/* Tracker icon */}
           <div className="relative shrink-0 mr-auto">
             <button
@@ -338,7 +338,7 @@ export default function MobileGamePage() {
               </svg>
             </button>
             {showTracker && trackerSections && (
-              <div className="absolute bottom-10 left-0 bg-[#1a2e1a]/80 backdrop-blur-sm border border-white/10 rounded-lg p-2.5 shadow-lg z-50 w-[260px]">
+              <div className="absolute bottom-10 left-0 bg-[#1a2e1a]/80 backdrop-blur-sm border border-white/10 rounded-lg p-2.5 shadow-lg z-50 w-[260px] max-w-[calc(100vw-1rem)]">
                 <TileTracker sections={trackerSections} />
               </div>
             )}
@@ -354,7 +354,7 @@ export default function MobileGamePage() {
           {south.melds.map((meld, i) => (
             <div
               key={i}
-              className="flex gap-px border border-white/[.12] rounded-sm px-0.5 py-0.5 shrink-0"
+              className="flex gap-px border border-white/[.12] rounded-sm px-0.5 py-0.5"
             >
               {meld.map((c, j) => (
                 <Tile key={j} char={c} variant="face" size="md" />
@@ -362,14 +362,16 @@ export default function MobileGamePage() {
             </div>
           ))}
           {/* Hand */}
-          <PlayerHand
-            tiles={south.handTiles ?? []}
-            drawnTile={south.drawnTile ?? null}
-            selectedId={selectedTileId}
-            size="md"
-            onSelect={handleSelectTile}
-            onDiscard={handleDiscardTile}
-          />
+          <div className="min-w-0 flex-1">
+            <PlayerHand
+              tiles={south.handTiles ?? []}
+              drawnTile={south.drawnTile ?? null}
+              selectedId={selectedTileId}
+              size="md"
+              onSelect={handleSelectTile}
+              onDiscard={handleDiscardTile}
+            />
+          </div>
           {/* Chat icon */}
           <div className="relative shrink-0 ml-auto">
             <button
@@ -414,11 +416,11 @@ export default function MobileGamePage() {
       </div>
 
       {/* Score — fixed on table, top-right of center area */}
-      <div className="absolute top-12 right-14 flex flex-col gap-px z-20">
+      <div className="absolute top-12 right-14 flex flex-col gap-px z-20 max-w-[80px]">
         {data.players.map((p, i) => (
           <div key={i} className="flex justify-between gap-2">
             <span
-              className={`text-[8px] ${i === 0 ? "text-amber-400/70" : "text-white/30"}`}
+              className={`text-[8px] truncate ${i === 0 ? "text-amber-400/70" : "text-white/30"}`}
             >
               {p.name}
             </span>

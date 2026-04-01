@@ -21,7 +21,7 @@ export default function RoundResultModal({
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-neutral-900 border border-neutral-700 rounded-xl w-full max-w-md mx-4 p-6 shadow-2xl">
+      <div className="bg-neutral-900 border border-neutral-700 rounded-xl w-full max-w-md mx-4 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         {isWin ? (
           <div className="text-center mb-4">
@@ -122,7 +122,7 @@ export default function RoundResultModal({
         {/* Back to lobby button */}
         <button
           onClick={onClose}
-          className="w-full py-2.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium transition-colors cursor-pointer"
+          className="w-full py-2.5 min-h-[44px] rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium transition-colors cursor-pointer"
         >
           返回大厅
         </button>
