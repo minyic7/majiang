@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import Tile from "../components/tile/Tile.js";
 import TileWall from "../components/tile/TileWall.js";
 import PlayerHand from "../components/game/PlayerHand.js";
 import GoldenTileIndicator from "../components/game/GoldenTileIndicator.js";
 import ActionBubbles from "../components/game/ActionBubbles.js";
+import RoundResultModal from "../components/game/RoundResultModal.js";
 import TileTracker from "../components/sidebar/TileTracker.js";
 import { useGameData } from "../hooks/useGameData.js";
 import { useTileTracker } from "../hooks/useTileTracker.js";
+import { useGameStore } from "../stores/gameStore.js";
 
 const WALL_STACKS = 10;
 
@@ -48,6 +50,8 @@ export default function MobileGamePage() {
     handleDiscardTile,
   } = useGameData();
 
+  const roundResult = useGameStore((s) => s.roundResult);
+  const navigate = useNavigate();
   const trackerSections = useTileTracker();
 
   const [showTracker, setShowTracker] = useState(false);
@@ -430,6 +434,17 @@ export default function MobileGamePage() {
         discardHint={discardHint}
         onPass={handlePass}
       />
+
+      {roundResult && gameState && (
+        <RoundResultModal
+          result={roundResult}
+          players={gameState.players}
+          onClose={() => {
+            useGameStore.getState().clearRoundResult();
+            navigate("/");
+          }}
+        />
+      )}
     </div>
   );
 }

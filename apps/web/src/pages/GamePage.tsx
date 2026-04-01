@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import TopBar from "../components/layout/TopBar.js";
 import GameTable from "../components/game/GameTable.js";
+import RoundResultModal from "../components/game/RoundResultModal.js";
 import TileTracker from "../components/sidebar/TileTracker.js";
 import ScoreBoard from "../components/sidebar/ScoreBoard.js";
 import RoundInfo from "../components/sidebar/RoundInfo.js";
 import ChatPanel from "../components/chat/ChatPanel.js";
 import { useGameData } from "../hooks/useGameData.js";
 import { useTileTracker } from "../hooks/useTileTracker.js";
+import { useGameStore } from "../stores/gameStore.js";
 
 export default function GamePage() {
   const {
@@ -23,6 +25,8 @@ export default function GamePage() {
     handleDiscardTile,
   } = useGameData();
 
+  const roundResult = useGameStore((s) => s.roundResult);
+  const navigate = useNavigate();
   const trackerSections = useTileTracker();
 
   const [chatMessages, setChatMessages] = useState<
@@ -109,6 +113,17 @@ export default function GamePage() {
           />
         </div>
       </div>
+
+      {roundResult && gameState && (
+        <RoundResultModal
+          result={roundResult}
+          players={gameState.players}
+          onClose={() => {
+            useGameStore.getState().clearRoundResult();
+            navigate("/");
+          }}
+        />
+      )}
     </div>
   );
 }
