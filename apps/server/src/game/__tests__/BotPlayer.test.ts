@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { ActionType, Suit } from "@majiang/shared";
-import type { AvailableActions, TileInstance } from "@majiang/shared";
+import type { AvailableActions, Tile, TileInstance } from "@majiang/shared";
 import { BotPlayer, scoreTile } from "../BotPlayer.js";
 
 function makeTile(id: number, value: number, suit: Suit = Suit.Wan): TileInstance {
@@ -140,6 +140,63 @@ describe("BotPlayer", () => {
       const score = scoreTile(windTile, hand);
       // Wind tile alone: matching count = 1 -> 10, no adjacency
       expect(score).toBe(10);
+    });
+
+    it("returns 999 for golden tiles", () => {
+      const goldenTile: Tile = { kind: "suited", suit: Suit.Wan, value: 5 as 1 };
+      const hand = [makeTile(0, 5), makeTile(1, 2), makeTile(2, 9)];
+      const score = scoreTile(hand[0], hand, goldenTile);
+      expect(score).toBe(999);
+    });
+
+    it("scores non-golden tiles normally when goldenTile is provided", () => {
+      const goldenTile: Tile = { kind: "suited", suit: Suit.Wan, value: 5 as 1 };
+      const hand = [makeTile(0, 5), makeTile(1, 2), makeTile(2, 9)];
+      const score = scoreTile(hand[2], hand, goldenTile);
+      expect(score).toBeLessThan(999);
+    });
+
+    it("returns 999 for golden wind tiles", () => {
+      const goldenTile: Tile = { kind: "wind", windType: "east" };
+      const windTile = makeWindTile(0, "east");
+      const hand = [windTile, makeTile(1, 3), makeTile(2, 4)];
+      const score = scoreTile(windTile, hand, goldenTile);
+      expect(score).toBe(999);
+    });
+  });
+
+  describe("golden tile awareness", () => {
+    const goldenTile: Tile = { kind: "suited", suit: Suit.Wan, value: 5 as 1 };
+
+    it("should never discard a golden tile", () => {
+      // Hand: 5w (golden), 2w, 9w — should discard 9w or 2w, not 5w
+      const hand = [makeTile(0, 5), makeTile(1, 2), makeTile(2, 9)];
+      const result = BotPlayer.choosePostDrawAction(noActions, hand, 0, goldenTile);
+      expect(result.type).toBe(ActionType.Discard);
+      expect((result as { tile: TileInstance }).tile.id).not.toBe(0);
+    });
+
+    it("should hu with 三金倒 (3+ golden tiles and canHu)", () => {
+      const hand = [
+        makeTile(0, 5), makeTile(1, 5), makeTile(2, 5),
+        makeTile(3, 1), makeTile(4, 2),
+      ];
+      const actions: AvailableActions = { ...noActions, canHu: true };
+      const result = BotPlayer.choosePostDrawAction(actions, hand, 0, goldenTile);
+      expect(result.type).toBe(ActionType.Hu);
+    });
+
+    it("should still hu normally even without 3 golden tiles", () => {
+      const hand = [makeTile(0, 5), makeTile(1, 1), makeTile(2, 2)];
+      const actions: AvailableActions = { ...noActions, canHu: true };
+      const result = BotPlayer.choosePostDrawAction(actions, hand, 0, goldenTile);
+      expect(result.type).toBe(ActionType.Hu);
+    });
+
+    it("chooseResponseAction accepts goldenTile param", () => {
+      const actions: AvailableActions = { ...noActions, canHu: true, canPass: true };
+      const result = BotPlayer.chooseResponseAction(actions, 1, goldenTile);
+      expect(result.type).toBe(ActionType.Hu);
     });
   });
 
