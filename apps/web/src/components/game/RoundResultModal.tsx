@@ -8,7 +8,7 @@ interface RoundResultModalProps {
 
 export default function RoundResultModal({ result, players, onClose }: RoundResultModalProps) {
   const isDraw = result.winnerId === null;
-  const winnerName = isDraw ? null : players[result.winnerId]?.name ?? "???";
+  const winnerName = result.winnerId !== null ? players[result.winnerId]?.name ?? "???" : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
