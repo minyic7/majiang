@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router";
+import type { RoomInfo } from "@majiang/shared";
 import { useGameStore } from "../stores/gameStore.js";
 
 interface RuleSetInfo {
@@ -103,7 +104,7 @@ export default function LobbyPage() {
       return;
     }
 
-    socket.emit("createRoom", { playerName: name, ruleSetId: "fuzhou" }, (room: { id: string; players: { name: string }[] }) => {
+    socket.emit("createRoom", { playerName: name, ruleSetId: "fuzhou" }, (room: RoomInfo) => {
       store.setRoomInfo(room);
       try {
         sessionStorage.setItem("majiang_roomId", room.id);
