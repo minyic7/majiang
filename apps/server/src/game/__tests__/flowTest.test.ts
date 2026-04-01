@@ -323,7 +323,7 @@ describe("Lobby → Game-Over integration flow", () => {
       await setupRoom(socket, "ActionPlayer");
 
       const stateUpdates: ClientGameState[] = [];
-      let discardedTileId: string | undefined;
+      let discardedTileId: number | undefined;
       let discardVerified = false;
 
       socket.on("gameStateUpdate" as any, (state: ClientGameState) => {
@@ -332,7 +332,7 @@ describe("Lobby → Game-Over integration flow", () => {
         // After we discard, check that the tile shows up in our discards
         if (discardedTileId && !discardVerified) {
           const myDiscards = state.players[state.myIndex].discards;
-          if (myDiscards.some((t: { id: string }) => t.id === discardedTileId)) {
+          if (myDiscards.some((t) => t.id === discardedTileId)) {
             discardVerified = true;
           }
         }
