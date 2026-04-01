@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Suit, type TrackerSection, type Tile } from "@majiang/shared";
+import { Suit, type Tile } from "@majiang/shared";
 import TopBar from "../components/layout/TopBar.js";
 import GameTable from "../components/game/GameTable.js";
 import TileTracker from "../components/sidebar/TileTracker.js";
@@ -7,27 +7,7 @@ import ScoreBoard from "../components/sidebar/ScoreBoard.js";
 import RoundInfo from "../components/sidebar/RoundInfo.js";
 import ChatPanel from "../components/chat/ChatPanel.js";
 import type { ActionOption } from "../components/game/ActionBubbles.js";
-
-// ─── Mock data for layout preview ───
-
-const MOCK_TRACKER: TrackerSection[] = [
-  {
-    label: "万", color: "rgba(255,90,90,.85)",
-    tiles: [1,2,3,4,5,6,7,8,9].map((v) => ({ id: `wan-${v}`, display: String(v), copies: 4 })),
-  },
-  {
-    label: "筒", color: "rgba(60,200,60,.85)",
-    tiles: [1,2,3,4,5,6,7,8,9].map((v) => ({ id: `bing-${v}`, display: String(v), copies: 4 })),
-  },
-  {
-    label: "条", color: "rgba(70,140,255,.85)",
-    tiles: [1,2,3,4,5,6,7,8,9].map((v) => ({ id: `tiao-${v}`, display: String(v), copies: 4 })),
-  },
-  {
-    label: "字牌", color: "rgba(255,185,25,.85)",
-    tiles: ["东","南","西","北","中","發","白"].map((c) => ({ id: `honor-${c}`, display: c, copies: 4 })),
-  },
-];
+import { useTileTracker } from "../hooks/useTileTracker.js";
 
 const MOCK_SCORES = [
   { name: "下家", score: 32 },
@@ -65,6 +45,7 @@ const MOCK_CHAT = [
 ];
 
 export default function GamePage() {
+  const trackerSections = useTileTracker();
   const [selectedTile, setSelectedTile] = useState<number | null>(null);
   const [showActions, setShowActions] = useState(true);
   const [chatMessages, setChatMessages] = useState(MOCK_CHAT);
@@ -121,7 +102,7 @@ export default function GamePage() {
       <div className="flex-1 flex gap-2.5 p-2.5 items-stretch min-h-0 overflow-hidden">
         {/* Left sidebar */}
         <div className="w-52 shrink-0 flex flex-col gap-1.5 bg-white/[.02] border border-white/[.07] rounded-xl p-2 overflow-y-auto">
-          <TileTracker sections={MOCK_TRACKER} />
+          {trackerSections && <TileTracker sections={trackerSections} />}
           <ScoreBoard scores={MOCK_SCORES} />
           <RoundInfo
             roundLabel="东风 · 第一局"

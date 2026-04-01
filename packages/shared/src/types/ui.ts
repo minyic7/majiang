@@ -29,4 +29,5 @@ export interface TrackerTile {
   id: string;
   display: string;
   copies: number; // total copies in the game (typically 4)
+  remaining?: number; // copies not yet visible (computed at runtime)
 }
