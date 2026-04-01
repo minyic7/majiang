@@ -1,11 +1,16 @@
 import { ActionType, tileKey } from "@majiang/shared";
-import type { GameAction, AvailableActions, TileInstance } from "@majiang/shared";
+import type { GameAction, AvailableActions, TileInstance, Tile } from "@majiang/shared";
 
 /**
  * Score a tile based on how useful it is in the hand.
  * Higher score = more valuable = keep it.
  */
-export function scoreTile(tile: TileInstance, hand: TileInstance[]): number {
+export function scoreTile(tile: TileInstance, hand: TileInstance[], goldenTile?: Tile): number {
+  // Golden tiles should never be discarded
+  if (goldenTile && tileKey(tile.tile) === tileKey(goldenTile)) {
+    return 999;
+  }
+
   let score = 0;
   const key = tileKey(tile.tile);
 
@@ -40,8 +45,18 @@ export class BotPlayer {
   static choosePostDrawAction(
     actions: AvailableActions,
     hand: TileInstance[],
-    playerIndex: number
+    playerIndex: number,
+    goldenTile?: Tile
   ): GameAction {
+    // 三金倒: if hand has 3+ golden tiles and can hu, always hu
+    if (actions.canHu && goldenTile) {
+      const goldenKey = tileKey(goldenTile);
+      const goldenCount = hand.filter((t) => tileKey(t.tile) === goldenKey).length;
+      if (goldenCount >= 3) {
+        return { type: ActionType.Hu, playerIndex };
+      }
+    }
+
     // Priority: Hu > AnGang > BuGang > Discard
     if (actions.canHu) {
       return { type: ActionType.Hu, playerIndex };
@@ -65,7 +80,7 @@ export class BotPlayer {
 
     // Discard the tile with the lowest score
     if (actions.canDiscard && hand.length > 0) {
-      const scored = hand.map((t) => ({ tile: t, score: scoreTile(t, hand) }));
+      const scored = hand.map((t) => ({ tile: t, score: scoreTile(t, hand, goldenTile) }));
       scored.sort((a, b) => a.score - b.score);
       return {
         type: ActionType.Discard,
@@ -84,7 +99,8 @@ export class BotPlayer {
 
   static chooseResponseAction(
     actions: AvailableActions,
-    playerIndex: number
+    playerIndex: number,
+    goldenTile?: Tile
   ): GameAction {
     // Priority: Hu > Peng > MingGang > Chi > Pass
     if (actions.canHu) {

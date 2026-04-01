@@ -381,7 +381,8 @@ export class GameEngine {
       return BotPlayer.choosePostDrawAction(
         actions,
         this.gameState.players[playerIndex].hand,
-        playerIndex
+        playerIndex,
+        this.gameState.goldenTile
       );
     }
 
@@ -422,7 +423,8 @@ export class GameEngine {
       return BotPlayer.choosePostDrawAction(
         { canDraw: false, canDiscard: true, canHu: false, canPeng: false, canMingGang: false, canPass: false, chiOptions: [], anGangOptions: [], buGangOptions: [] },
         player.hand,
-        playerIndex
+        playerIndex,
+        this.gameState.goldenTile
       );
     }
 
@@ -481,7 +483,7 @@ export class GameEngine {
         );
         const botDelay = this.callbacks.botDelayMs ?? BotPlayer.getThinkDelay();
         setTimeout(() => {
-          const botAction = BotPlayer.chooseResponseAction(responseActions, p);
+          const botAction = BotPlayer.chooseResponseAction(responseActions, p, this.gameState.goldenTile);
           // Fill in targetTile for peng/gang
           if (botAction.type === ActionType.Peng || botAction.type === ActionType.MingGang) {
             (botAction as { targetTile: TileInstance }).targetTile = discardedTile;
