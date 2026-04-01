@@ -1,11 +1,10 @@
 FROM node:22-alpine AS builder
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
-COPY packages/ packages/
-COPY apps/server/ apps/server/
+COPY . .
 RUN pnpm install --frozen-lockfile
-RUN pnpm -F shared build && pnpm -F server build
+RUN pnpm -F shared build
+RUN pnpm -F server build
 
 FROM node:22-alpine
 RUN corepack enable && corepack prepare pnpm@latest --activate
