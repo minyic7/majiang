@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { Suit, type Tile as TileType } from "@majiang/shared";
 import Tile from "../components/tile/Tile.js";
 import TileWall from "../components/tile/TileWall.js";
 import PlayerHand from "../components/game/PlayerHand.js";
+import GoldenTileIndicator from "../components/game/GoldenTileIndicator.js";
 import ActionBubbles, { type ActionOption } from "../components/game/ActionBubbles.js";
 
 // ─── Mock data (same as desktop) ───
@@ -44,6 +46,9 @@ const EAST = {
   discards: ["bing2","bing4","east","south","west","north","bing7","bing9"],
   melds: [["north","north","north"]],
 };
+
+const MOCK_FLIPPED_TILE: TileType = { kind: "suited", suit: Suit.Wan, value: 2 };
+const MOCK_GOLDEN_TILE: TileType = { kind: "suited", suit: Suit.Wan, value: 3 };
 
 const WALL_STACKS = 10;
 const WALL_REMAINING = 120;
@@ -144,9 +149,10 @@ export default function MobileGamePage() {
           {/* (1,1) Center: walls top/bottom + info */}
           <div className="flex flex-col items-center justify-center">
             <TileWall direction="horizontal" remaining={w3} totalStacks={WALL_STACKS} tileSize="sm" consumeFrom="end" faceCenter="bottom" />
-            <div className="bg-black/50 rounded flex flex-col items-center justify-center aspect-square w-full">
+            <div className="bg-black/50 rounded flex flex-col items-center justify-center aspect-square w-full gap-0.5">
               <span className="text-xs font-medium text-amber-300/90 whitespace-nowrap">剩余 {WALL_REMAINING} 张</span>
               <span className="text-[9px] text-white/30 whitespace-nowrap">东风 · 第一局</span>
+              {MOCK_GOLDEN_TILE && <GoldenTileIndicator goldenTile={MOCK_GOLDEN_TILE} flippedTile={MOCK_FLIPPED_TILE} compact />}
             </div>
             <TileWall direction="horizontal" remaining={w1} totalStacks={WALL_STACKS} tileSize="sm" consumeFrom="start" faceCenter="top" />
           </div>

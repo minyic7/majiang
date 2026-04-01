@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { TrackerSection } from "@majiang/shared";
+import { Suit, type TrackerSection, type Tile } from "@majiang/shared";
 import TopBar from "../components/layout/TopBar.js";
 import GameTable from "../components/game/GameTable.js";
 import TileTracker from "../components/sidebar/TileTracker.js";
@@ -53,6 +53,9 @@ const MOCK_HAND = [
 ];
 
 const MOCK_DRAWN = { id: 14, char: "fa", suit: "honor" };
+
+const MOCK_FLIPPED_TILE: Tile = { kind: "suited", suit: Suit.Wan, value: 2 };
+const MOCK_GOLDEN_TILE: Tile = { kind: "suited", suit: Suit.Wan, value: 3 };
 
 const MOCK_CHAT = [
   { id: "1", sender: "下家", text: "好的！" },
@@ -168,6 +171,8 @@ export default function GamePage() {
             actionVisible={showActions}
             discardInfo={showActions ? { playerName: "上家", char: "wan3" } : null}
             discardHint={selectedTile !== null && !showActions}
+            goldenTile={MOCK_GOLDEN_TILE}
+            flippedTile={MOCK_FLIPPED_TILE}
             onSelectTile={(id) => {
               setSelectedTile(id);
               // Show draw actions if selecting the drawn tile
