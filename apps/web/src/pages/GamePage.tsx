@@ -110,6 +110,7 @@ export default function GamePage() {
         <RoundResultModal
           result={roundResult}
           players={gameState.players}
+          currentRound={gameState.currentRound}
           onNextRound={() => {
             useGameStore.getState().clearRoundResult();
             const socket = useGameStore.getState().socket;
