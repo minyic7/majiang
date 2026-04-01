@@ -515,6 +515,10 @@ export const fuzhouRuleSet: RuleSet = {
     return isBonusTileGuard(tile);
   },
 
+  determineGoldenTile(flippedTile: Tile): Tile {
+    return determineGoldenTile(flippedTile);
+  },
+
   checkWin(player: PlayerState, winningTile: TileInstance, context: WinContext): WinResult {
     const goldenTile = (context.extra?.goldenTile as Tile) ?? null;
     const allHandTiles = [...player.hand, winningTile];

@@ -1,4 +1,4 @@
-import type { TileInstance } from "./tile.js";
+import type { Tile, TileInstance } from "./tile.js";
 
 export enum GamePhase {
   Waiting = "waiting",
@@ -42,4 +42,6 @@ export interface GameState {
   dealerIndex: number;
   lastDiscard: { tile: TileInstance; playerIndex: number } | null;
   ruleSetId: string;
+  goldenTile?: Tile;
+  flippedTile?: Tile;
 }

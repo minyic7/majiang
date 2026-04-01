@@ -34,6 +34,9 @@ export interface RuleSet {
   /** Get available actions after drawing a tile */
   getPostDrawActions(player: PlayerState, drawnTile: TileInstance, context: ActionContext): AvailableActions;
 
+  /** Determine the golden (wildcard) tile from the flipped indicator tile. Only needed for variants that use golden tiles. */
+  determineGoldenTile?(flippedTile: Tile): Tile;
+
   /** Determine next dealer after a round */
   getNextDealer(currentDealer: number, winnerIndex: number | null, context: DealerContext): DealerResult;
 }
