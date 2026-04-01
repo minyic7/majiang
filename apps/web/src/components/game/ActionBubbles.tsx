@@ -1,4 +1,5 @@
 import Tile from "../tile/Tile.js";
+import { useActionTimer } from "../../hooks/useActionTimer.js";
 
 export interface ActionOption {
   id: string;
@@ -23,6 +24,8 @@ export default function ActionBubbles({
   discardHint,
   visible,
 }: ActionBubblesProps) {
+  const remaining = useActionTimer();
+
   if (!visible) return null;
 
   if (discardHint && actions.length === 0) {
@@ -42,6 +45,13 @@ export default function ActionBubbles({
 
       {/* Bubble container */}
       <div className="relative pointer-events-auto flex flex-col items-center gap-3">
+        {/* Countdown timer */}
+        {remaining != null && remaining > 0 && (
+          <div className={`flex items-center justify-center rounded-full w-8 h-8 text-sm font-bold ${remaining <= 5 ? "bg-red-600/80 text-white animate-pulse" : "bg-white/20 text-white/80"} backdrop-blur-sm`}>
+            {remaining}
+          </div>
+        )}
+
         {/* Discarded tile info */}
         {discardInfo && (
           <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5">

@@ -19,11 +19,11 @@ import { ActionResolver } from "./ActionResolver.js";
 import { BotPlayer } from "./BotPlayer.js";
 
 const SEAT_WINDS = ["east", "south", "west", "north"] as const;
-const ACTION_TIMEOUT_MS = 15000;
+const DEFAULT_ACTION_TIMEOUT_MS = 15000;
 
 export interface GameEngineCallbacks {
   onStateUpdate?: (playerIndex: number, state: ClientGameState) => void;
-  onActionRequired?: (playerIndex: number, actions: AvailableActions) => void;
+  onActionRequired?: (playerIndex: number, actions: AvailableActions, timeoutMs: number) => void;
   onGameOver?: (result: {
     winnerId: number | null;
     winType: string;
@@ -33,6 +33,8 @@ export interface GameEngineCallbacks {
   }) => void;
   /** Set to 0 for tests to skip bot delays */
   botDelayMs?: number;
+  /** Timeout in ms for player actions. Defaults to 15000. */
+  actionTimeoutMs?: number;
 }
 
 export interface PlayerInfo {
@@ -51,7 +53,9 @@ export class GameEngine {
   private scores: number[] = [0, 0, 0, 0];
   private gangDrawPending = false;
   private lastWinnerId: number | null = null;
+  private readonly actionTimeoutMs: number;
   constructor(ruleSet: RuleSet, players: PlayerInfo[], callbacks: GameEngineCallbacks = {}) {
+    this.actionTimeoutMs = callbacks.actionTimeoutMs ?? DEFAULT_ACTION_TIMEOUT_MS;
     this.ruleSet = ruleSet;
     this.players = players;
     this.callbacks = callbacks;
@@ -363,7 +367,7 @@ export class GameEngine {
     actions: AvailableActions,
     drawnTile: TileInstance
   ): Promise<GameAction> {
-    this.callbacks.onActionRequired?.(playerIndex, actions);
+    this.callbacks.onActionRequired?.(playerIndex, actions, this.actionTimeoutMs);
 
     if (this.players[playerIndex].isBot) {
       const delayMs = this.callbacks.botDelayMs ?? BotPlayer.getThinkDelay();
@@ -379,7 +383,7 @@ export class GameEngine {
     const resolver = new ActionResolver([playerIndex], playerIndex);
     this.actionResolver = resolver;
 
-    const result = await resolver.waitForResponses(ACTION_TIMEOUT_MS);
+    const result = await resolver.waitForResponses(this.actionTimeoutMs);
     this.actionResolver = null;
 
     if (result) {
@@ -404,7 +408,7 @@ export class GameEngine {
       buGangOptions: [],
     };
 
-    this.callbacks.onActionRequired?.(playerIndex, actions);
+    this.callbacks.onActionRequired?.(playerIndex, actions, this.actionTimeoutMs);
 
     if (this.players[playerIndex].isBot) {
       const delayMs = this.callbacks.botDelayMs ?? BotPlayer.getThinkDelay();
@@ -416,7 +420,7 @@ export class GameEngine {
     const resolver = new ActionResolver([playerIndex], playerIndex);
     this.actionResolver = resolver;
 
-    const result = await resolver.waitForResponses(ACTION_TIMEOUT_MS);
+    const result = await resolver.waitForResponses(this.actionTimeoutMs);
     this.actionResolver = null;
 
     if (result) {
@@ -449,7 +453,7 @@ export class GameEngine {
         responseActions.chiOptions.length > 0
       ) {
         respondingPlayers.push(i);
-        this.callbacks.onActionRequired?.(i, responseActions);
+        this.callbacks.onActionRequired?.(i, responseActions, this.actionTimeoutMs);
       }
     }
 
@@ -478,7 +482,7 @@ export class GameEngine {
       }
     }
 
-    const result = await resolver.waitForResponses(ACTION_TIMEOUT_MS);
+    const result = await resolver.waitForResponses(this.actionTimeoutMs);
     this.actionResolver = null;
 
     return result;
@@ -519,7 +523,7 @@ export class GameEngine {
           buGangOptions: [],
         };
         respondingPlayers.push(i);
-        this.callbacks.onActionRequired?.(i, huOnlyActions);
+        this.callbacks.onActionRequired?.(i, huOnlyActions, this.actionTimeoutMs);
       }
     }
 
@@ -538,7 +542,7 @@ export class GameEngine {
       }
     }
 
-    const result = await resolver.waitForResponses(ACTION_TIMEOUT_MS);
+    const result = await resolver.waitForResponses(this.actionTimeoutMs);
     this.actionResolver = null;
 
     // Only hu claims are valid — filter out anything else

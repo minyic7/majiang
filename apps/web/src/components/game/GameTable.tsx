@@ -1,4 +1,5 @@
 import type { Tile as TileType } from "@majiang/shared";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Tile from "../tile/Tile.js";
 import TileWall from "../tile/TileWall.js";
 import OpponentArea from "./OpponentArea.js";
@@ -45,6 +46,9 @@ export default function GameTable({
   onPass, onSelectTile, onDiscardTile, onFlowerClick, centerContent,
   goldenTile, flippedTile,
 }: GameTableProps) {
+  const prefersReduced = useReducedMotion();
+  const dur = prefersReduced ? 0 : 0.15;
+
   const [south, west, north, east] = players;
   const perWall = Math.ceil(wallRemaining / 4);
   const w1 = Math.min(perWall, wallRemaining);
@@ -87,7 +91,13 @@ export default function GameTable({
           {/* (0,1) north: discards + wall */}
           <div className="flex flex-col items-center justify-end gap-2 overflow-hidden">
             <div className="flex flex-wrap-reverse gap-0.5 justify-center content-start overflow-hidden w-full">
-              {north.discards.map((c, i) => <Tile key={i} char={c} variant="face" size="md" />)}
+              <AnimatePresence>
+                {north.discards.map((c, i) => (
+                  <motion.div key={`${c}-${i}`} initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: dur }}>
+                    <Tile char={c} variant="face" size="md" />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
             <TileWall direction="horizontal" remaining={w3} totalStacks={WALL_STACKS} consumeFrom="end" faceCenter="bottom" />
           </div>
@@ -97,7 +107,13 @@ export default function GameTable({
           {/* (1,0) west: discards + wall */}
           <div className="flex items-center justify-end gap-2 overflow-hidden">
             <div className="flex flex-col flex-wrap-reverse gap-0.5 items-end overflow-hidden h-full">
-              {west.discards.map((c, i) => <Tile key={i} char={c} variant="face" size="md" rotate={-90} />)}
+              <AnimatePresence>
+                {west.discards.map((c, i) => (
+                  <motion.div key={`${c}-${i}`} initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: dur }}>
+                    <Tile char={c} variant="face" size="md" rotate={-90} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
             <TileWall direction="vertical" remaining={w4} totalStacks={WALL_STACKS} consumeFrom="end" faceCenter="right" />
           </div>
@@ -116,7 +132,13 @@ export default function GameTable({
           <div className="flex items-center justify-start gap-2 overflow-hidden">
             <TileWall direction="vertical" remaining={w2} totalStacks={WALL_STACKS} consumeFrom="start" faceCenter="left" />
             <div className="flex flex-col flex-wrap gap-0.5 items-start overflow-hidden h-full">
-              {east.discards.map((c, i) => <Tile key={i} char={c} variant="face" size="md" rotate={90} />)}
+              <AnimatePresence>
+                {east.discards.map((c, i) => (
+                  <motion.div key={`${c}-${i}`} initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: dur }}>
+                    <Tile char={c} variant="face" size="md" rotate={90} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -126,7 +148,13 @@ export default function GameTable({
           <div className="flex flex-col items-center justify-start gap-2 overflow-hidden">
             <TileWall direction="horizontal" remaining={w1} totalStacks={WALL_STACKS} consumeFrom="start" faceCenter="top" />
             <div className="flex flex-wrap gap-0.5 justify-start content-start overflow-hidden w-full">
-              {south.discards.map((c, i) => <Tile key={i} char={c} variant="face" size="md" />)}
+              <AnimatePresence>
+                {south.discards.map((c, i) => (
+                  <motion.div key={`${c}-${i}`} initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: dur }}>
+                    <Tile char={c} variant="face" size="md" />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </div>
           {/* (2,2) empty */}

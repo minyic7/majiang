@@ -239,10 +239,10 @@ function buildCallbacks(
         io.to(player.socketId).emit("gameStateUpdate", state);
       }
     },
-    onActionRequired: (playerIndex, actions) => {
+    onActionRequired: (playerIndex, actions, timeoutMs) => {
       const player = room.players[playerIndex];
       if (player?.socketId) {
-        io.to(player.socketId).emit("actionRequired", actions);
+        io.to(player.socketId).emit("actionRequired", actions, timeoutMs);
       }
     },
     onGameOver: (result) => {
