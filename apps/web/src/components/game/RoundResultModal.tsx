@@ -7,12 +7,14 @@ interface Player {
 interface RoundResultModalProps {
   result: RoundResult;
   players: Player[];
+  onNextRound: () => void;
   onClose: () => void;
 }
 
 export default function RoundResultModal({
   result,
   players,
+  onNextRound,
   onClose,
 }: RoundResultModalProps) {
   const isWin = result.winnerId !== null;
@@ -119,13 +121,21 @@ export default function RoundResultModal({
           </div>
         </div>
 
-        {/* Back to lobby button */}
-        <button
-          onClick={onClose}
-          className="w-full py-2.5 min-h-[44px] rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-medium transition-colors cursor-pointer"
-        >
-          返回大厅
-        </button>
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={onNextRound}
+            className="flex-1 py-2.5 min-h-[44px] rounded-lg bg-green-700 hover:bg-green-600 text-white font-medium transition-colors cursor-pointer"
+          >
+            下一局
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 min-h-[44px] rounded-lg bg-neutral-700 hover:bg-neutral-600 text-white font-medium transition-colors cursor-pointer"
+          >
+            返回大厅
+          </button>
+        </div>
       </div>
     </div>
   );

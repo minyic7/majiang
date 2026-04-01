@@ -112,9 +112,12 @@ export function useGameData() {
     const north = mapPlayer(2);
     const east = mapPlayer(3);
 
-    // Round label
-    const dealerWind = WIND_LABELS[gameState.players[gameState.dealerIndex].seatWind] ?? "东";
-    const roundLabel = `${dealerWind}风 · 第一局`;
+    // Round label — use gameState fields if available (ticket #25), fallback otherwise
+    const gs = gameState as typeof gameState & { prevalentWind?: string; roundInWind?: number };
+    const prevalentWind = WIND_LABELS[gs.prevalentWind ?? "east"] ?? "东";
+    const roundNumMap = ["一", "二", "三", "四"];
+    const roundNum = roundNumMap[(gs.roundInWind ?? 1) - 1] ?? String(gs.roundInWind ?? 1);
+    const roundLabel = `${prevalentWind}风 · 第${roundNum}局`;
 
     // Current turn as relative index (0=south, 1=west, 2=north, 3=east)
     const currentTurn = (gameState.currentTurn - gameState.myIndex + 4) % 4;
