@@ -21,7 +21,12 @@ export default function TileTracker({ sections }: TileTrackerProps) {
       <div className="text-[9px] text-white/28 font-medium tracking-wide uppercase mb-2">记牌器</div>
       {sections.map((section) => (
         <div key={section.label} className="mb-2 last:mb-0">
-          <div className="text-[7px] font-medium text-center mb-1" style={{ color: section.color }}>{section.label}</div>
+          <div
+            className="text-[9px] font-bold text-center mb-1 rounded-sm py-0.5"
+            style={{ color: section.color, backgroundColor: section.color.replace(/[\d.]+\)$/, "0.15)") }}
+          >
+            {section.label}
+          </div>
           <div className={`grid gap-0.5 ${section.tiles.length <= 7 ? "grid-cols-7" : "grid-cols-9"}`}>
             {section.tiles.map((tile) => {
               const isUsed = used.has(tile.id);

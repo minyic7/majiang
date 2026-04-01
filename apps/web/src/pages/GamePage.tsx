@@ -12,19 +12,19 @@ import type { ActionOption } from "../components/game/ActionBubbles.js";
 
 const MOCK_TRACKER: TrackerSection[] = [
   {
-    label: "万", color: "rgba(255,100,100,.6)",
+    label: "万", color: "rgba(255,90,90,.85)",
     tiles: [1,2,3,4,5,6,7,8,9].map((v) => ({ id: `wan-${v}`, display: String(v), copies: 4 })),
   },
   {
-    label: "筒", color: "rgba(80,180,80,.6)",
+    label: "筒", color: "rgba(60,200,60,.85)",
     tiles: [1,2,3,4,5,6,7,8,9].map((v) => ({ id: `bing-${v}`, display: String(v), copies: 4 })),
   },
   {
-    label: "条", color: "rgba(80,140,255,.6)",
+    label: "条", color: "rgba(70,140,255,.85)",
     tiles: [1,2,3,4,5,6,7,8,9].map((v) => ({ id: `tiao-${v}`, display: String(v), copies: 4 })),
   },
   {
-    label: "字牌", color: "rgba(255,185,25,.5)",
+    label: "字牌", color: "rgba(255,185,25,.85)",
     tiles: ["东","南","西","北","中","發","白"].map((c) => ({ id: `honor-${c}`, display: c, copies: 4 })),
   },
 ];
@@ -84,12 +84,12 @@ export default function GamePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0e1a0e] flex flex-col">
+    <div className="h-screen bg-[#080f08] flex flex-col overflow-hidden">
       <TopBar roomId="2048" roundLabel="东风局" playerCount={4} />
 
-      <div className="flex-1 flex gap-2.5 p-2.5 items-start min-h-0 overflow-x-hidden">
+      <div className="flex-1 flex gap-2.5 p-2.5 items-stretch min-h-0 overflow-hidden">
         {/* Left sidebar */}
-        <div className="w-40 shrink-0 flex flex-col gap-1.5 bg-white/[.02] border border-white/[.07] rounded-xl p-2 sticky top-2.5">
+        <div className="w-40 shrink-0 flex flex-col gap-1.5 bg-white/[.02] border border-white/[.07] rounded-xl p-2 overflow-y-auto">
           <TileTracker sections={MOCK_TRACKER} />
           <ScoreBoard scores={MOCK_SCORES} />
           <RoundInfo
@@ -100,7 +100,7 @@ export default function GamePage() {
         </div>
 
         {/* Game table */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 min-h-0">
           <GameTable
             players={[
               {
@@ -158,7 +158,7 @@ export default function GamePage() {
         </div>
 
         {/* Right sidebar */}
-        <div className="w-40 shrink-0 flex flex-col gap-1.5 bg-white/[.02] border border-white/[.07] rounded-xl p-2 sticky top-2.5">
+        <div className="w-44 shrink-0 flex flex-col gap-1.5 bg-white/[.02] border border-white/[.07] rounded-xl p-2 overflow-y-auto">
           <ChatPanel
             messages={chatMessages}
             onSend={(text) => {

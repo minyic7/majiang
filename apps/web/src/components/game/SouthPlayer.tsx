@@ -41,9 +41,9 @@ export default function SouthPlayer({
   onFlowerClick,
 }: SouthPlayerProps) {
   return (
-    <div className="bg-black/45 rounded-md p-2 flex flex-col gap-1.5 relative">
+    <div className="bg-black/45 rounded-md p-2 flex flex-col gap-1.5 relative h-full">
       {/* Info strip */}
-      <div className="flex gap-1.5 shrink-0 items-stretch h-14">
+      <div className="flex gap-1.5 shrink-0 items-stretch h-10">
         {/* Name + hand count */}
         <div className="flex flex-col justify-between shrink-0 w-13">
           <span className="text-[9px] font-medium text-amber-300/90 whitespace-nowrap">{name} · {seatWind}</span>

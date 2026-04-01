@@ -55,12 +55,12 @@ export default function GameTable({
   const [south, west, north, east] = players;
 
   return (
-    <div className="bg-[#235018] rounded-xl p-2.5">
+    <div className="bg-[#1a5c2a] rounded-xl p-2.5 h-full flex flex-col">
       <div
-        className="grid gap-2"
+        className="grid gap-2 flex-1 min-h-0"
         style={{
           gridTemplateColumns: "120px 1fr 120px",
-          gridTemplateRows: "120px minmax(260px, 1fr) 160px",
+          gridTemplateRows: "160px 1fr 180px",
         }}
       >
         {/* West — col1, row1-2 */}
@@ -93,8 +93,8 @@ export default function GameTable({
 
         {/* Center tile wall — col2, row2 */}
         <div className="bg-black/20 rounded-lg flex items-center justify-center" style={{ gridColumn: 2, gridRow: 2 }}>
-          <div className="relative w-[260px] h-[260px] shrink-0">
-            <TileWall remaining={wallRemaining} />
+          <div className="relative w-[300px] h-[300px] shrink-0">
+            <TileWall remaining={wallRemaining} size={300} />
             <CenterInfo wallRemaining={wallRemaining} roundLabel={roundLabel}>
               {centerContent}
             </CenterInfo>
