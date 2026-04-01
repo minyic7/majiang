@@ -5,6 +5,8 @@ import TileWall from "../components/tile/TileWall.js";
 import PlayerHand from "../components/game/PlayerHand.js";
 import GoldenTileIndicator from "../components/game/GoldenTileIndicator.js";
 import ActionBubbles, { type ActionOption } from "../components/game/ActionBubbles.js";
+import TileTracker from "../components/sidebar/TileTracker.js";
+import { useTileTracker } from "../hooks/useTileTracker.js";
 
 // ─── Mock data (same as desktop) ───
 
@@ -78,6 +80,7 @@ const SCORES = [
 ];
 
 export default function MobileGamePage() {
+  const trackerSections = useTileTracker();
   const [selectedTile, setSelectedTile] = useState<number | null>(null);
   const [showActions, setShowActions] = useState(true);
   const [showTracker, setShowTracker] = useState(false);
@@ -201,29 +204,9 @@ export default function MobileGamePage() {
                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
               </svg>
             </button>
-            {showTracker && (
+            {showTracker && trackerSections && (
               <div className="absolute bottom-10 left-0 bg-[#1a2e1a]/80 backdrop-blur-sm border border-white/10 rounded-lg p-2.5 shadow-lg z-50 w-[260px]">
-                <div className="text-[11px] text-white/50 font-semibold mb-1.5">记牌器</div>
-                {[
-                  { label: "万", color: "rgba(255,90,90,.85)", tiles: ["1","2","3","4","5","6","7","8","9"] },
-                  { label: "筒", color: "rgba(60,200,60,.85)", tiles: ["1","2","3","4","5","6","7","8","9"] },
-                  { label: "条", color: "rgba(70,140,255,.85)", tiles: ["1","2","3","4","5","6","7","8","9"] },
-                  { label: "字", color: "rgba(255,185,25,.85)", tiles: ["东","南","西","北","中","發","白"] },
-                  { label: "花", color: "rgba(200,100,200,.85)", tiles: ["春","夏","秋","冬","梅","兰","竹","菊"] },
-                ].map((sec) => (
-                  <div key={sec.label} className="mb-1.5 last:mb-0">
-                    <div className="text-[10px] font-bold text-center mb-0.5 rounded py-px" style={{ color: sec.color, backgroundColor: sec.color.replace(/[\d.]+\)$/, "0.12)") }}>
-                      {sec.label}
-                    </div>
-                    <div className={`grid gap-px ${sec.tiles.length <= 7 ? "grid-cols-7" : "grid-cols-9"}`}>
-                      {sec.tiles.map((t) => (
-                        <button key={t} className="text-center text-[10px] rounded py-0.5 cursor-pointer select-none bg-white/[.06] text-white/45 hover:bg-white/[.15] active:bg-red-500/20 active:text-red-400/60 transition-colors">
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                <TileTracker sections={trackerSections} />
               </div>
             )}
           </div>
