@@ -267,57 +267,296 @@ describe("Edge case: Continuous Gang", () => {
 // ─── 3. Qiang Gang Hu (抢杠胡) ───
 
 describe("Edge case: Qiang Gang Hu (robbing the kong)", () => {
-  it("should document that buGang does not currently allow other players to claim hu (TODO)", async () => {
-    // Currently, after buGang in playLoop, the code just sets gangDrawPending
-    // and continues without calling handleDiscardResponses.
-    // In standard mahjong rules, other players should have a window to claim hu
-    // when a buGang is declared (抢杠胡 / robbing the kong).
-    //
-    // This test documents the current behavior: buGang does NOT trigger
-    // a response window for other players.
-    //
-    // TODO: Implement qiang gang hu — after executeBuGang, call
-    // handleDiscardResponses (or similar) to let others claim hu.
+  it("should allow another player to claim hu when buGang is declared (抢杠胡)", async () => {
+    let gameOverResult: {
+      winnerId: number | null;
+      winType: string;
+      scores: number[];
+      payments: number[];
+      breakdown: string[];
+    } | null = null;
 
-    const engine = new GameEngine(StubRuleSet, botPlayers, { botDelayMs: 0 });
+    // Custom stub: checkWin returns true only for player 1 with isRobbingKong
+    const QiangGangStub: RuleSet = {
+      ...StubRuleSet,
+      id: "qianggang-stub",
+      name: "Qianggang Stub",
+      checkWin(_player: PlayerState, _winningTile: TileInstance, context: WinContext): WinResult {
+        // Only player 1 can win, and only via robbing kong
+        if (context.isRobbingKong) {
+          return { isWin: true, winType: "qianggang-hu" };
+        }
+        return { isWin: false, winType: "" };
+      },
+      getPostDrawActions(player: PlayerState, drawnTile: TileInstance, _context: ActionContext): AvailableActions {
+        const result: AvailableActions = {
+          canDraw: false,
+          canDiscard: true,
+          canHu: false,
+          canPeng: false,
+          canMingGang: false,
+          canPass: false,
+          chiOptions: [],
+          anGangOptions: [],
+          buGangOptions: [],
+        };
+        // Check buGang
+        for (let i = 0; i < player.melds.length; i++) {
+          const meld = player.melds[i];
+          if (meld.type === MeldType.Peng) {
+            const match = player.hand.find(
+              (t) => t.tile.kind === "suited" && meld.tiles[0].tile.kind === "suited"
+                && t.tile.suit === meld.tiles[0].tile.suit && t.tile.value === meld.tiles[0].tile.value
+            );
+            if (match) {
+              result.buGangOptions.push({ tile: match, meldIndex: i });
+            }
+          }
+        }
+        return result;
+      },
+      getResponseActions() {
+        return {
+          canDraw: false,
+          canDiscard: false,
+          canHu: false,
+          canPeng: false,
+          canMingGang: false,
+          canPass: true,
+          chiOptions: [],
+          anGangOptions: [],
+          buGangOptions: [],
+        };
+      },
+    };
+
+    const engine = new GameEngine(QiangGangStub, botPlayers, {
+      botDelayMs: 0,
+      onGameOver: (result) => {
+        gameOverResult = result;
+      },
+    });
     (engine as any).shuffle = () => {};
     (engine as any).deal();
 
     const gs = engine.gameState;
     const turnIdx = gs.currentTurn;
-    const player = gs.players[turnIdx];
+    const gangPlayer = gs.players[turnIdx];
+    const huPlayerIdx = (turnIdx + 1) % 4;
 
-    // Set up a peng meld for player
-    const pengMeld = {
+    // Set up gang player with a peng meld and matching tile in hand
+    gangPlayer.melds = [{
       type: MeldType.Peng,
       tiles: [ti(800, wan(5)), ti(801, wan(5)), ti(802, wan(5))],
       sourceTile: ti(802, wan(5)),
-      sourcePlayer: (turnIdx + 1) % 4,
-    };
-    player.melds = [pengMeld];
-
-    // Put matching tile in hand for buGang
+      sourcePlayer: (turnIdx + 2) % 4,
+    }];
     const buGangTile = ti(803, wan(5));
-    player.hand = [
+    gangPlayer.hand = [
       buGangTile,
       ti(810, wan(1)), ti(811, wan(2)), ti(812, wan(3)),
       ti(813, wan(4)), ti(814, wan(6)), ti(815, wan(7)),
       ti(816, wan(8)), ti(817, wan(9)), ti(818, bing(1)),
     ];
 
-    // Execute buGang directly
-    (engine as any).executeBuGang(turnIdx, buGangTile);
+    // Ensure wall has enough tiles so the draw succeeds
+    gs.wall = [ti(900, wan(5)), ...gs.wall];
 
-    // Verify the meld was upgraded
-    expect(player.melds[0].type).toBe(MeldType.BuGang);
-    expect(player.melds[0].tiles).toHaveLength(4);
+    await (engine as any).playLoop();
 
-    // Verify tile was removed from hand
-    expect(player.hand.find((t: TileInstance) => t.id === buGangTile.id)).toBeUndefined();
+    // The hu player should have won via qianggang hu
+    expect(gameOverResult).not.toBeNull();
+    expect(gameOverResult!.winnerId).toBe(huPlayerIdx);
+    expect(gameOverResult!.winType).toBe("qianggang-hu");
+    expect(gs.phase).toBe(GamePhase.Finished);
 
-    // NOTE: Currently no response window is given to other players after buGang.
-    // This is a known limitation — qiang gang hu is not yet implemented.
-  });
+    // The buGang should have been reverted — meld should be Peng again
+    expect(gangPlayer.melds[0].type).toBe(MeldType.Peng);
+    expect(gangPlayer.melds[0].tiles).toHaveLength(3);
+  }, 15000);
+
+  it("should proceed with gang draw when no one claims hu after buGang", async () => {
+    let gameOverResult: {
+      winnerId: number | null;
+      winType: string;
+    } | null = null;
+
+    // Stub where checkWin always returns false — no one can hu
+    const NoWinStub: RuleSet = {
+      ...StubRuleSet,
+      id: "nowin-bugang-stub",
+      name: "No Win BuGang Stub",
+      checkWin() {
+        return { isWin: false, winType: "" };
+      },
+      getPostDrawActions(player: PlayerState, drawnTile: TileInstance, _context: ActionContext): AvailableActions {
+        const result: AvailableActions = {
+          canDraw: false,
+          canDiscard: true,
+          canHu: false,
+          canPeng: false,
+          canMingGang: false,
+          canPass: false,
+          chiOptions: [],
+          anGangOptions: [],
+          buGangOptions: [],
+        };
+        for (let i = 0; i < player.melds.length; i++) {
+          const meld = player.melds[i];
+          if (meld.type === MeldType.Peng) {
+            const match = player.hand.find(
+              (t) => t.tile.kind === "suited" && meld.tiles[0].tile.kind === "suited"
+                && t.tile.suit === meld.tiles[0].tile.suit && t.tile.value === meld.tiles[0].tile.value
+            );
+            if (match) {
+              result.buGangOptions.push({ tile: match, meldIndex: i });
+            }
+          }
+        }
+        return result;
+      },
+      getResponseActions() {
+        return {
+          canDraw: false,
+          canDiscard: false,
+          canHu: false,
+          canPeng: false,
+          canMingGang: false,
+          canPass: true,
+          chiOptions: [],
+          anGangOptions: [],
+          buGangOptions: [],
+        };
+      },
+    };
+
+    const engine = new GameEngine(NoWinStub, botPlayers, {
+      botDelayMs: 0,
+      onGameOver: (result) => {
+        gameOverResult = result;
+      },
+    });
+    (engine as any).shuffle = () => {};
+    (engine as any).deal();
+
+    const gs = engine.gameState;
+    const turnIdx = gs.currentTurn;
+    const gangPlayer = gs.players[turnIdx];
+
+    // Set up gang player with peng meld and matching tile
+    gangPlayer.melds = [{
+      type: MeldType.Peng,
+      tiles: [ti(800, wan(5)), ti(801, wan(5)), ti(802, wan(5))],
+      sourceTile: ti(802, wan(5)),
+      sourcePlayer: (turnIdx + 1) % 4,
+    }];
+    gangPlayer.hand = [
+      ti(803, wan(5)),
+      ti(810, wan(1)), ti(811, wan(2)), ti(812, wan(3)),
+      ti(813, wan(4)), ti(814, wan(6)), ti(815, wan(7)),
+      ti(816, wan(8)), ti(817, wan(9)), ti(818, bing(1)),
+    ];
+
+    // Place a marker tile at front of wallTail to verify gang draw comes from tail
+    const tailMarker = ti(999, tiao(9));
+    gs.wallTail.unshift(tailMarker);
+
+    await (engine as any).playLoop();
+
+    // Game should end (draw — wall exhausts). The buGang meld should remain upgraded.
+    expect(gameOverResult).not.toBeNull();
+    expect(gangPlayer.melds[0].type).toBe(MeldType.BuGang);
+    expect(gangPlayer.melds[0].tiles).toHaveLength(4);
+  }, 30000);
+
+  it("should pass isRobbingKong=true in WinContext for qianggang hu wins", async () => {
+    let capturedContext: WinContext | null = null;
+
+    const ContextCaptureStub: RuleSet = {
+      ...StubRuleSet,
+      id: "context-capture-stub",
+      name: "Context Capture Stub",
+      checkWin(_player: PlayerState, _winningTile: TileInstance, context: WinContext): WinResult {
+        if (context.isRobbingKong) {
+          capturedContext = context;
+          return { isWin: true, winType: "qianggang-hu" };
+        }
+        return { isWin: false, winType: "" };
+      },
+      getPostDrawActions(player: PlayerState, drawnTile: TileInstance, _context: ActionContext): AvailableActions {
+        const result: AvailableActions = {
+          canDraw: false,
+          canDiscard: true,
+          canHu: false,
+          canPeng: false,
+          canMingGang: false,
+          canPass: false,
+          chiOptions: [],
+          anGangOptions: [],
+          buGangOptions: [],
+        };
+        for (let i = 0; i < player.melds.length; i++) {
+          const meld = player.melds[i];
+          if (meld.type === MeldType.Peng) {
+            const match = player.hand.find(
+              (t) => t.tile.kind === "suited" && meld.tiles[0].tile.kind === "suited"
+                && t.tile.suit === meld.tiles[0].tile.suit && t.tile.value === meld.tiles[0].tile.value
+            );
+            if (match) {
+              result.buGangOptions.push({ tile: match, meldIndex: i });
+            }
+          }
+        }
+        return result;
+      },
+      getResponseActions() {
+        return {
+          canDraw: false,
+          canDiscard: false,
+          canHu: false,
+          canPeng: false,
+          canMingGang: false,
+          canPass: true,
+          chiOptions: [],
+          anGangOptions: [],
+          buGangOptions: [],
+        };
+      },
+    };
+
+    const engine = new GameEngine(ContextCaptureStub, botPlayers, {
+      botDelayMs: 0,
+      onGameOver: () => {},
+    });
+    (engine as any).shuffle = () => {};
+    (engine as any).deal();
+
+    const gs = engine.gameState;
+    const turnIdx = gs.currentTurn;
+    const gangPlayer = gs.players[turnIdx];
+
+    gangPlayer.melds = [{
+      type: MeldType.Peng,
+      tiles: [ti(800, wan(5)), ti(801, wan(5)), ti(802, wan(5))],
+      sourceTile: ti(802, wan(5)),
+      sourcePlayer: (turnIdx + 2) % 4,
+    }];
+    gangPlayer.hand = [
+      ti(803, wan(5)),
+      ti(810, wan(1)), ti(811, wan(2)), ti(812, wan(3)),
+      ti(813, wan(4)), ti(814, wan(6)), ti(815, wan(7)),
+      ti(816, wan(8)), ti(817, wan(9)), ti(818, bing(1)),
+    ];
+
+    gs.wall = [ti(900, wan(5)), ...gs.wall];
+
+    await (engine as any).playLoop();
+
+    // Verify WinContext was passed with isRobbingKong=true
+    expect(capturedContext).not.toBeNull();
+    expect(capturedContext!.isRobbingKong).toBe(true);
+    expect(capturedContext!.isSelfDraw).toBe(false);
+  }, 15000);
 });
 
 // ─── 4. Flower Replacement Chains (补花后再补花) ───
