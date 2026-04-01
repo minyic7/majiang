@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import TopBar from "../components/layout/TopBar.js";
 import GameTable from "../components/game/GameTable.js";
 import RoundResultModal from "../components/game/RoundResultModal.js";
+import GameInfoModal from "../components/game/GameInfoModal.js";
 import TileTracker from "../components/sidebar/TileTracker.js";
 import ScoreBoard from "../components/sidebar/ScoreBoard.js";
 import RoundInfo from "../components/sidebar/RoundInfo.js";
@@ -30,6 +31,7 @@ export default function GamePage() {
   const connected = useGameStore((s) => s.connected);
   const errorMessage = useGameStore((s) => s.errorMessage);
   const navigate = useNavigate();
+  const [showGameInfo, setShowGameInfo] = useState(false);
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -78,11 +80,7 @@ export default function GamePage() {
           useGameStore.getState().reset();
           navigate("/");
         }}
-        onSettings={() => {
-          alert(
-            `Room: ${roomId ?? "—"}\nRound: ${data.roundLabel}\nPlayers: ${data.players.length}`,
-          );
-        }}
+        onSettings={() => setShowGameInfo(true)}
       />
 
       <div className="flex-1 flex gap-2.5 p-2.5 items-stretch min-h-0 overflow-hidden">
@@ -147,6 +145,20 @@ export default function GamePage() {
             useGameStore.getState().clearRoundResult();
             navigate("/");
           }}
+        />
+      )}
+
+      {showGameInfo && gameState && (
+        <GameInfoModal
+          roomId={roomId ?? ""}
+          ruleSetId={gameState.ruleSetId}
+          goldenTile={gameState.goldenTile}
+          players={gameState.players.map((p) => ({
+            name: p.name,
+            seatWind: p.seatWind,
+            connected: true,
+          }))}
+          onClose={() => setShowGameInfo(false)}
         />
       )}
 
