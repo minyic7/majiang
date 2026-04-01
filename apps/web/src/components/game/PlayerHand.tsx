@@ -12,9 +12,10 @@ interface PlayerHandProps {
   onSelect?: (id: number) => void;
   onDiscard?: (id: number) => void;
   selectedId?: number | null;
+  size?: "sm" | "md" | "lg";
 }
 
-export default function PlayerHand({ tiles, drawnTile, onSelect, onDiscard, selectedId }: PlayerHandProps) {
+export default function PlayerHand({ tiles, drawnTile, onSelect, onDiscard, selectedId, size = "lg" }: PlayerHandProps) {
   // Combine hand + drawn tile into one row, drawn tile at the end
   const allTiles = drawnTile ? [...tiles, drawnTile] : tiles;
   let prevSuit: string | undefined;
@@ -30,7 +31,7 @@ export default function PlayerHand({ tiles, drawnTile, onSelect, onDiscard, sele
             <Tile
               char={t.char}
               variant="face"
-              size="lg"
+              size={size}
               selected={selectedId === t.id}
               drawn={!!isDrawn}
               onClick={() => {

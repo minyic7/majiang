@@ -74,11 +74,11 @@ export default function GameTable({
         </div>
 
         {/* Table center: 3×3 equal grid */}
-        <div className="flex-1 min-w-0 bg-black/[.12] rounded-lg overflow-hidden grid grid-rows-3 grid-cols-3 gap-4 p-4 border border-white/[.03]">
+        <div className="flex-1 min-w-0 bg-black/[.12] rounded-lg overflow-hidden grid grid-rows-[1fr_auto_1fr] grid-cols-[1fr_auto_1fr] gap-2 p-3 border border-white/[.03]">
           {/* (0,0) empty */}
           <div />
           {/* (0,1) north: discards + wall */}
-          <div className="flex flex-col items-center justify-end gap-4 overflow-hidden">
+          <div className="flex flex-col items-center justify-end gap-2 overflow-hidden">
             <div className="flex flex-wrap-reverse gap-0.5 justify-center content-start overflow-hidden w-full">
               {north.discards.map((c, i) => <Tile key={i} char={c} variant="face" size="md" />)}
             </div>
@@ -88,7 +88,7 @@ export default function GameTable({
           <div />
 
           {/* (1,0) west: discards + wall */}
-          <div className="flex items-center justify-end gap-4 overflow-hidden">
+          <div className="flex items-center justify-end gap-2 overflow-hidden">
             <div className="flex flex-col flex-wrap-reverse gap-0.5 items-end overflow-hidden h-full">
               {west.discards.map((c, i) => <Tile key={i} char={c} variant="face" size="md" rotate={-90} />)}
             </div>
@@ -96,16 +96,16 @@ export default function GameTable({
           </div>
           {/* (1,1) center info — fixed 300x300 */}
           <div className="flex items-center justify-center">
-            <div className="bg-gradient-to-b from-black/60 to-black/75 rounded-xl flex flex-col items-center justify-center gap-1.5 w-full h-full border border-white/[.06] shadow-lg">
-              <span className="text-sm font-medium text-amber-300/90">
+            <div className="bg-gradient-to-b from-black/60 to-black/75 rounded-xl flex flex-col items-center justify-center gap-1.5 w-full h-full min-w-[160px] border border-white/[.06] shadow-lg px-4 py-3">
+              <span className="text-sm font-medium text-amber-300/90 whitespace-nowrap">
                 剩余 <span className="text-base">{wallRemaining}</span> 张
               </span>
-              <span className="text-xs text-white/30">{roundLabel}</span>
+              <span className="text-xs text-white/30 whitespace-nowrap">{roundLabel}</span>
               {centerContent}
             </div>
           </div>
           {/* (1,2) east: wall + discards */}
-          <div className="flex items-center justify-start gap-4 overflow-hidden">
+          <div className="flex items-center justify-start gap-2 overflow-hidden">
             <TileWall direction="vertical" remaining={w2} totalStacks={WALL_STACKS} consumeFrom="start" faceCenter="left" />
             <div className="flex flex-col flex-wrap gap-0.5 items-start overflow-hidden h-full">
               {east.discards.map((c, i) => <Tile key={i} char={c} variant="face" size="md" rotate={90} />)}
@@ -115,7 +115,7 @@ export default function GameTable({
           {/* (2,0) empty */}
           <div />
           {/* (2,1) south: wall + discards */}
-          <div className="flex flex-col items-center justify-start gap-4 overflow-hidden">
+          <div className="flex flex-col items-center justify-start gap-2 overflow-hidden">
             <TileWall direction="horizontal" remaining={w1} totalStacks={WALL_STACKS} consumeFrom="start" faceCenter="top" />
             <div className="flex flex-wrap gap-0.5 justify-start content-start overflow-hidden w-full">
               {south.discards.map((c, i) => <Tile key={i} char={c} variant="face" size="md" />)}
