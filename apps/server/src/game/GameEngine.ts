@@ -49,6 +49,7 @@ export class GameEngine {
   private players: PlayerInfo[];
   private callbacks: GameEngineCallbacks;
   private actionResolver: ActionResolver | null = null;
+  private pendingActions = new Map<number, { actions: AvailableActions; deadline: number }>();
   private lianZhuangCount = 0;
   private scores: number[] = [0, 0, 0, 0];
   private gangDrawPending = false;
@@ -133,6 +134,15 @@ export class GameEngine {
     if (this.actionResolver) {
       this.actionResolver.submitAction(playerIndex, action);
     }
+  }
+
+  /** Return the pending action for a player, if one exists and hasn't expired */
+  getPendingAction(playerIndex: number): { actions: AvailableActions; timeoutMs: number } | null {
+    const pending = this.pendingActions.get(playerIndex);
+    if (!pending) return null;
+    const remaining = pending.deadline - Date.now();
+    if (remaining <= 0) return null;
+    return { actions: pending.actions, timeoutMs: remaining };
   }
 
   /** Generate client-safe state for a specific player */
@@ -433,8 +443,10 @@ export class GameEngine {
     };
 
     this.callbacks.onActionRequired?.(playerIndex, actions, this.actionTimeoutMs);
+    this.pendingActions.set(playerIndex, { actions, deadline: Date.now() + this.actionTimeoutMs });
 
     if (this.players[playerIndex].isBot || !this.isPlayerConnected(playerIndex)) {
+      this.pendingActions.delete(playerIndex);
       const delayMs = this.callbacks.botDelayMs ?? BotPlayer.getThinkDelay();
       if (delayMs > 0) await this.delay(delayMs);
       return BotPlayer.choosePostDrawAction(
@@ -450,6 +462,7 @@ export class GameEngine {
 
     const result = await resolver.waitForResponses(this.actionTimeoutMs);
     this.actionResolver = null;
+    this.pendingActions.delete(playerIndex);
 
     if (result) {
       return result.action;
@@ -482,6 +495,7 @@ export class GameEngine {
       ) {
         respondingPlayers.push(i);
         this.callbacks.onActionRequired?.(i, responseActions, this.actionTimeoutMs);
+        this.pendingActions.set(i, { actions: responseActions, deadline: Date.now() + this.actionTimeoutMs });
       }
     }
 
@@ -493,6 +507,7 @@ export class GameEngine {
     // Bots and disconnected players respond automatically
     for (const p of respondingPlayers) {
       if (this.players[p].isBot || !this.isPlayerConnected(p)) {
+        this.pendingActions.delete(p);
         const responseActions = this.ruleSet.getResponseActions(
           this.gameState.players[p],
           discardedTile,
@@ -508,6 +523,7 @@ export class GameEngine {
 
     const result = await resolver.waitForResponses(this.actionTimeoutMs);
     this.actionResolver = null;
+    for (const p of respondingPlayers) this.pendingActions.delete(p);
 
     return result;
   }
@@ -548,6 +564,7 @@ export class GameEngine {
         };
         respondingPlayers.push(i);
         this.callbacks.onActionRequired?.(i, huOnlyActions, this.actionTimeoutMs);
+        this.pendingActions.set(i, { actions: huOnlyActions, deadline: Date.now() + this.actionTimeoutMs });
       }
     }
 
@@ -559,6 +576,7 @@ export class GameEngine {
     // Bots and disconnected players auto-respond: always claim hu when available
     for (const p of respondingPlayers) {
       if (this.players[p].isBot || !this.isPlayerConnected(p)) {
+        this.pendingActions.delete(p);
         const botDelay = this.callbacks.botDelayMs ?? BotPlayer.getThinkDelay();
         setTimeout(() => {
           resolver.submitAction(p, { type: ActionType.Hu, playerIndex: p });
@@ -568,6 +586,7 @@ export class GameEngine {
 
     const result = await resolver.waitForResponses(this.actionTimeoutMs);
     this.actionResolver = null;
+    for (const p of respondingPlayers) this.pendingActions.delete(p);
 
     // Only hu claims are valid — filter out anything else
     if (result && result.action.type === ActionType.Hu) {

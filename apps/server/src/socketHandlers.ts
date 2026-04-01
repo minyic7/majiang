@@ -193,6 +193,12 @@ export function registerSocketHandlers(
             "gameStateUpdate",
             room.engine.toClientGameState(playerIdx)
           );
+
+          // Re-send pending action if this player has one
+          const pending = room.engine.getPendingAction(playerIdx);
+          if (pending) {
+            socket.emit("actionRequired", pending.actions, pending.timeoutMs);
+          }
         }
         socket.emit("roomUpdate", room.toRoomInfo());
         // Notify other players that this player reconnected
