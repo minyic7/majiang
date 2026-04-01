@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import TopBar from "../components/layout/TopBar.js";
+import GameInfoModal from "../components/game/GameInfoModal.js";
 import Tile from "../components/tile/Tile.js";
 import TileWall from "../components/tile/TileWall.js";
 import PlayerHand from "../components/game/PlayerHand.js";
@@ -82,6 +83,7 @@ export default function MobileGamePage() {
 
   const [showTracker, setShowTracker] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [showGameInfo, setShowGameInfo] = useState(false);
 
   if (!gameState || !data) {
     return (
@@ -124,11 +126,7 @@ export default function MobileGamePage() {
           useGameStore.getState().reset();
           navigate("/");
         }}
-        onSettings={() => {
-          alert(
-            `Room: ${roomId ?? "—"}\nRound: ${data.roundLabel}\nPlayers: ${data.players.length}`,
-          );
-        }}
+        onSettings={() => setShowGameInfo(true)}
       />
       {/* Main row: West + (North + Center) + East */}
       <div className="flex-1 min-h-0 flex gap-1">
@@ -545,6 +543,20 @@ export default function MobileGamePage() {
             useGameStore.getState().clearRoundResult();
             navigate("/");
           }}
+        />
+      )}
+
+      {showGameInfo && gameState && (
+        <GameInfoModal
+          roomId={roomId ?? ""}
+          ruleSetId={gameState.ruleSetId}
+          goldenTile={gameState.goldenTile}
+          players={gameState.players.map((p) => ({
+            name: p.name,
+            seatWind: p.seatWind,
+            connected: true,
+          }))}
+          onClose={() => setShowGameInfo(false)}
         />
       )}
 
