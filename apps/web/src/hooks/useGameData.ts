@@ -130,10 +130,11 @@ export function useGameData() {
           }
         : null;
 
-    // Score data (placeholder — no score tracking in ClientGameState yet)
+    // Score data — use cumulative scores from roundResult if available
+    const roundResult = useGameStore.getState().roundResult;
     const scores = gameState.players.map((p, i) => ({
       name: p.name,
-      score: 0,
+      score: roundResult?.scores[i] ?? 0,
       isMe: i === gameState.myIndex,
     }));
 
