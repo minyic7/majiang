@@ -1,5 +1,7 @@
+import { getTileArt } from "./art/index.js";
+
 interface TileProps {
-  /** Display character (e.g., "一", "中", "花") */
+  /** Tile code (e.g., "wan1", "bing5", "zhong") or display character */
   char?: string;
   /** Tile variant */
   variant: "face" | "back" | "flower";
@@ -48,19 +50,22 @@ export default function Tile({
   }
 
   if (variant === "flower") {
+    const art = char ? getTileArt(char) : null;
     return (
       <div
         className={`shrink-0 rounded-sm border border-green-600/50 bg-green-800/60 flex items-center justify-center font-medium text-green-400 ${className}`}
         style={{ width: s.w, height: s.h, fontSize: s.font - 2 }}
       >
-        {char || "花"}
+        {art || char || "花"}
       </div>
     );
   }
 
   // Face tile
+  const art = char ? getTileArt(char) : null;
+
   const baseClasses = [
-    "shrink-0 rounded-sm flex items-center justify-center font-medium transition-all duration-150 relative",
+    "shrink-0 rounded-sm flex items-center justify-center font-medium transition-all duration-150 relative overflow-hidden",
     selected
       ? "bg-gradient-to-b from-[#fffde8] to-[#f5d060] border-2 border-amber-400 shadow-[0_0_8px_rgba(238,176,24,0.4)] -translate-y-2 scale-110 z-10"
       : highlight
@@ -71,23 +76,24 @@ export default function Tile({
     className,
   ].filter(Boolean).join(" ");
 
+  const faceContent = art || <span className="text-neutral-800" style={{ fontSize: s.font }}>{char}</span>;
+
   const inner = rotate ? (
     <div
-      className="flex items-center justify-center font-medium text-neutral-800"
+      className="flex items-center justify-center"
       style={{
         width: s.w,
         height: s.h,
-        fontSize: s.font,
         transform: `rotate(${rotate}deg)`,
       }}
     >
-      {char}
+      {faceContent}
     </div>
   ) : null;
 
   const tileStyle = rotate
     ? { width: s.h, height: s.w }
-    : { width: s.w, height: s.h, fontSize: s.font };
+    : { width: s.w, height: s.h };
 
   return (
     <div
@@ -95,7 +101,7 @@ export default function Tile({
       style={tileStyle}
       onClick={onClick}
     >
-      {rotate ? inner : <span className="text-neutral-800">{char}</span>}
+      {rotate ? inner : faceContent}
       {drawn && (
         <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[11px] text-amber-400/80 whitespace-nowrap">
           摸

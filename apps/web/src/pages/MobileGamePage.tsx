@@ -7,42 +7,42 @@ import ActionBubbles, { type ActionOption } from "../components/game/ActionBubbl
 // ─── Mock data (same as desktop) ───
 
 const MOCK_HAND = [
-  { id: 1, char: "一", suit: "wan" },
-  { id: 2, char: "二", suit: "wan" },
-  { id: 3, char: "三", suit: "wan" },
-  { id: 4, char: "四", suit: "wan" },
-  { id: 5, char: "五", suit: "wan" },
-  { id: 6, char: "六", suit: "wan" },
-  { id: 7, char: "七", suit: "bing" },
-  { id: 8, char: "八", suit: "bing" },
-  { id: 9, char: "九", suit: "bing" },
-  { id: 10, char: "筒", suit: "bing" },
-  { id: 11, char: "条", suit: "tiao" },
-  { id: 12, char: "三", suit: "tiao" },
-  { id: 13, char: "中", suit: "honor" },
+  { id: 1, char: "wan1", suit: "wan" },
+  { id: 2, char: "wan2", suit: "wan" },
+  { id: 3, char: "wan3", suit: "wan" },
+  { id: 4, char: "wan4", suit: "wan" },
+  { id: 5, char: "wan5", suit: "wan" },
+  { id: 6, char: "wan6", suit: "wan" },
+  { id: 7, char: "bing7", suit: "bing" },
+  { id: 8, char: "bing8", suit: "bing" },
+  { id: 9, char: "bing9", suit: "bing" },
+  { id: 10, char: "bing1", suit: "bing" },
+  { id: 11, char: "tiao1", suit: "tiao" },
+  { id: 12, char: "tiao3", suit: "tiao" },
+  { id: 13, char: "zhong", suit: "honor" },
 ];
-const MOCK_DRAWN = { id: 14, char: "發", suit: "honor" };
+const MOCK_DRAWN = { id: 14, char: "fa", suit: "honor" };
 
 const SOUTH = {
   name: "自己", seatWind: "南",
-  discards: ["一","二","三","四","五","六","七","八"],
-  melds: [["", "", ""]],
+  discards: ["wan1","wan2","wan3","wan4","wan5","wan6","wan7","wan8"],
+  melds: [["bing5", "bing5", "bing5"]],
   flowerCount: 2,
 };
 const WEST = {
   name: "上家", hand: 12, flowers: 3,
-  discards: ["一","三","五","七","九","筒","二","四","六","八"],
-  melds: [["二","二","二"]],
+  discards: ["wan1","wan3","wan5","wan7","wan9","bing1","wan2","wan4","wan6","wan8"],
+  melds: [["tiao2","tiao2","tiao2"]],
 };
 const NORTH = {
   name: "对家", hand: 13, flowers: 2,
-  discards: ["四","六","八","条","中","發","白","一","三"],
+  discards: ["wan4","wan6","wan8","tiao1","zhong","fa","bai","wan1","wan3"],
   melds: [] as string[][],
 };
 const EAST = {
   name: "下家", hand: 11, flowers: 0,
-  discards: ["二","四","东","南","西","北","七","九"],
-  melds: [["北","北","北"]],
+  discards: ["bing2","bing4","east","south","west","north","bing7","bing9"],
+  melds: [["north","north","north"]],
 };
 
 const WALL_STACKS = 10;
@@ -79,9 +79,9 @@ export default function MobileGamePage() {
   const [showChat, setShowChat] = useState(false);
 
   const mockActions: ActionOption[] = [
-    { id: "hu", label: "胡", color: "rgba(255,80,80,1)", tiles: [{ char: "三", highlight: true }], onClick: () => setShowActions(false) },
-    { id: "peng", label: "碰", color: "rgba(140,185,255,1)", tiles: [{ char: "三" }, { char: "三" }, { char: "三", highlight: true }], onClick: () => setShowActions(false) },
-    { id: "chi1", label: "吃", color: "rgba(100,220,180,1)", tiles: [{ char: "一" }, { char: "二" }, { char: "三", highlight: true }], onClick: () => setShowActions(false) },
+    { id: "hu", label: "胡", color: "rgba(255,80,80,1)", tiles: [{ char: "wan3", highlight: true }], onClick: () => setShowActions(false) },
+    { id: "peng", label: "碰", color: "rgba(140,185,255,1)", tiles: [{ char: "wan3" }, { char: "wan3" }, { char: "wan3", highlight: true }], onClick: () => setShowActions(false) },
+    { id: "chi1", label: "吃", color: "rgba(100,220,180,1)", tiles: [{ char: "wan1" }, { char: "wan2" }, { char: "wan3", highlight: true }], onClick: () => setShowActions(false) },
   ];
 
   return (
@@ -282,7 +282,7 @@ export default function MobileGamePage() {
       <ActionBubbles
         visible={showActions}
         actions={mockActions}
-        discardInfo={showActions ? { playerName: "上家", char: "三" } : null}
+        discardInfo={showActions ? { playerName: "上家", char: "wan3" } : null}
         discardHint={selectedTile !== null && !showActions}
         onPass={() => setShowActions(false)}
       />
