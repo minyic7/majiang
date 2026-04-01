@@ -38,6 +38,8 @@ interface GameStore {
 
   // UI state
   selectedTileId: number | null;
+  /** Epoch ms when the current action window expires (server timeout) */
+  actionDeadline: number | null;
 
   // Socket ref (not serializable, but fine for zustand)
   socket: GameSocket | null;
@@ -53,6 +55,7 @@ interface GameStore {
   setRoundResult: (result: RoundResult | null) => void;
   clearRoundResult: () => void;
   selectTile: (id: number | null) => void;
+  setActionDeadline: (deadline: number | null) => void;
   setSocket: (socket: GameSocket | null) => void;
 
   // Actions — socket emitters
@@ -76,6 +79,7 @@ const initialState = {
   availableActions: null,
   roundResult: null,
   selectedTileId: null,
+  actionDeadline: null,
   socket: null,
 };
 
@@ -92,6 +96,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setErrorMessage: (msg) => set({ errorMessage: msg }),
   setPlayerName: (name) => set({ playerName: name }),
   selectTile: (id) => set({ selectedTileId: id }),
+  setActionDeadline: (deadline) => set({ actionDeadline: deadline }),
   setSocket: (socket) => set({ socket }),
 
   createRoom: (playerName, ruleSetId) => {
@@ -140,7 +145,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { socket } = get();
     if (!socket) return;
     socket.emit("playerAction", action);
-    set({ availableActions: null });
+    set({ availableActions: null, actionDeadline: null });
   },
 
   reset: () => {

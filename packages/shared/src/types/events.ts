@@ -18,6 +18,7 @@ export interface ClientGameState {
   currentRound: number;
   prevalentWind: "east" | "south" | "west" | "north";
   roundInWind: number;
+  scores: number[];
 }
 
 export interface ClientPlayerState {
@@ -34,7 +35,7 @@ export interface ClientPlayerState {
 /** Socket.IO event types */
 export interface ServerEvents {
   gameStateUpdate: (state: ClientGameState) => void;
-  actionRequired: (actions: AvailableActions) => void;
+  actionRequired: (actions: AvailableActions, timeoutMs: number) => void;
   gameOver: (result: {
     winnerId: number | null;
     winType: string;

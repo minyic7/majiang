@@ -44,8 +44,10 @@ export function useSocket() {
       useGameStore.getState().setGameState(state);
     });
 
-    socket.on("actionRequired", (actions) => {
-      useGameStore.getState().setAvailableActions(actions);
+    socket.on("actionRequired", (actions, timeoutMs) => {
+      const store = useGameStore.getState();
+      store.setAvailableActions(actions);
+      store.setActionDeadline(Date.now() + timeoutMs);
     });
 
     socket.on("gameOver", (result) => {
