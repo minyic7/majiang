@@ -1,7 +1,9 @@
+import type { Tile as TileType } from "@majiang/shared";
 import Tile from "../tile/Tile.js";
 import TileWall from "../tile/TileWall.js";
 import OpponentArea from "./OpponentArea.js";
 import SouthPlayer from "./SouthPlayer.js";
+import GoldenTileIndicator from "./GoldenTileIndicator.js";
 import type { ActionOption } from "./ActionBubbles.js";
 
 interface PlayerData {
@@ -30,6 +32,8 @@ interface GameTableProps {
   onDiscardTile: (id: number) => void;
   onFlowerClick?: (position: "south" | "west" | "north" | "east") => void;
   centerContent?: React.ReactNode;
+  goldenTile?: TileType;
+  flippedTile?: TileType;
 }
 
 const SIDE_W = 120;
@@ -39,6 +43,7 @@ export default function GameTable({
   players, wallRemaining, roundLabel, currentTurn,
   selectedTileId, actions, actionVisible, discardInfo, discardHint,
   onPass, onSelectTile, onDiscardTile, onFlowerClick, centerContent,
+  goldenTile, flippedTile,
 }: GameTableProps) {
   const [south, west, north, east] = players;
   const perWall = Math.ceil(wallRemaining / 4);
@@ -103,6 +108,7 @@ export default function GameTable({
                 剩余 <span className="text-base">{wallRemaining}</span> 张
               </span>
               <span className="text-xs text-white/30 whitespace-nowrap">{roundLabel}</span>
+              {goldenTile && <GoldenTileIndicator goldenTile={goldenTile} flippedTile={flippedTile} />}
               {centerContent}
             </div>
           </div>
