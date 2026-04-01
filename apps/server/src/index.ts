@@ -5,6 +5,7 @@ import { logger } from "hono/logger";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import type { ClientEvents, ServerEvents } from "@majiang/shared";
+import { getAllRuleSets } from "@majiang/shared";
 
 const app = new Hono();
 
@@ -13,9 +14,8 @@ app.use("*", cors());
 
 app.get("/api/health", (c) => c.json({ ok: true }));
 app.get("/api/rulesets", (c) => {
-  const { getAllRuleSets } = require("@majiang/shared");
   const sets = getAllRuleSets();
-  return c.json(sets.map((s: any) => ({ id: s.id, name: s.name, description: s.description })));
+  return c.json(sets.map((s) => ({ id: s.id, name: s.name, description: s.description })));
 });
 
 const port = Number(process.env.PORT) || 7702;
