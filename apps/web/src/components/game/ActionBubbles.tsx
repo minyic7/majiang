@@ -66,7 +66,7 @@ export default function ActionBubbles({
             <div
               key={action.id}
               onClick={action.onClick}
-              className="flex flex-col items-center gap-1.5 cursor-pointer px-3 py-2 rounded-xl bg-black/30 backdrop-blur-sm border border-white/[.08] hover:bg-black/40 hover:border-white/[.15] hover:-translate-y-0.5 transition-all"
+              className="flex flex-col items-center gap-1.5 cursor-pointer px-3 py-2 min-h-[44px] rounded-xl bg-black/30 backdrop-blur-sm border border-white/[.08] hover:bg-black/40 hover:border-white/[.15] hover:-translate-y-0.5 transition-all"
             >
               <div className="flex gap-0.5 items-end">
                 {action.tiles.map((t, i) => (
@@ -85,7 +85,7 @@ export default function ActionBubbles({
           {onPass && (
             <div
               onClick={onPass}
-              className="flex flex-col items-center justify-center cursor-pointer px-4 py-2 rounded-xl bg-black/20 backdrop-blur-sm border border-white/[.06] hover:bg-black/30 hover:border-white/[.12] transition-all"
+              className="flex flex-col items-center justify-center cursor-pointer px-4 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-black/20 backdrop-blur-sm border border-white/[.06] hover:bg-black/30 hover:border-white/[.12] transition-all"
             >
               <span className="text-sm text-white/40 hover:text-white/60 font-medium">过</span>
             </div>
