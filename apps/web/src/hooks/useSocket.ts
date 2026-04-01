@@ -11,7 +11,6 @@ const SOCKET_URL = import.meta.env.DEV
 
 export function useSocket() {
   const socketRef = useRef<GameSocket | null>(null);
-  const store = useGameStore();
 
   useEffect(() => {
     const socket: GameSocket = io(SOCKET_URL, {
@@ -21,30 +20,45 @@ export function useSocket() {
 
     socketRef.current = socket;
 
+    const store = useGameStore.getState();
+    store.setSocket(socket);
+
     socket.on("connect", () => {
-      store.setConnected(true);
+      useGameStore.getState().setConnected(true);
     });
 
     socket.on("disconnect", () => {
-      store.setConnected(false);
+      useGameStore.getState().setConnected(false);
     });
 
     socket.on("gameStateUpdate", (state) => {
-      store.setGameState(state);
+      useGameStore.getState().setGameState(state);
     });
 
     socket.on("actionRequired", (actions) => {
-      store.setAvailableActions(actions);
+      useGameStore.getState().setAvailableActions(actions);
     });
 
     socket.on("gameOver", (result) => {
-      // Handle game over — could be a modal or state update
       console.log("Game over:", result);
+    });
+
+    socket.on("roomUpdate", (room) => {
+      useGameStore.getState().setRoomInfo(room);
+    });
+
+    socket.on("actionError", (error) => {
+      useGameStore.getState().setErrorMessage(error.message);
+    });
+
+    socket.on("error", (msg) => {
+      useGameStore.getState().setErrorMessage(msg);
     });
 
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      useGameStore.getState().setSocket(null);
     };
   }, []);
 
