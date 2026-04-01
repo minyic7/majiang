@@ -49,20 +49,9 @@ export default function GameTable({
 
   return (
     <div className="bg-gradient-to-br from-[#1a6030] to-[#145020] rounded-xl p-2 h-full flex flex-col gap-1 shadow-[inset_0_2px_4px_rgba(255,255,255,0.05),inset_0_-2px_4px_rgba(0,0,0,0.2)]">
-      {/* Row 1: North player hand area */}
-      <div className="shrink-0 bg-black/10 rounded-md p-1.5 overflow-hidden">
-        <OpponentArea
-          name={north.name} handCount={north.handCount}
-          discards={[]} melds={north.melds}
-          flowerCount={north.flowerCount} position="north"
-          isCurrentTurn={currentTurn === 2}
-          onFlowerClick={() => onFlowerClick?.("north")}
-        />
-      </div>
-
-      {/* Row 2: West + Table Center + East */}
+      {/* Row 1: West + (North + Center) + East — all extend to top */}
       <div className="flex-1 min-h-0 flex gap-1">
-        {/* West player hand area */}
+        {/* West player hand area — full height */}
         <div className="bg-black/10 rounded-md p-1.5 overflow-hidden" style={{ width: SIDE_W }}>
           <OpponentArea
             name={west.name} handCount={west.handCount}
@@ -73,8 +62,21 @@ export default function GameTable({
           />
         </div>
 
-        {/* Table center: 3×3 equal grid */}
-        <div className="flex-1 min-w-0 bg-black/[.12] rounded-lg overflow-hidden grid grid-rows-[1fr_auto_1fr] grid-cols-[1fr_auto_1fr] gap-2 p-3 border border-white/[.03]">
+        {/* Center column: North hand + Table center */}
+        <div className="flex-1 min-w-0 flex flex-col gap-1">
+          {/* North player hand area */}
+          <div className="shrink-0 bg-black/10 rounded-md p-1.5 overflow-hidden">
+            <OpponentArea
+              name={north.name} handCount={north.handCount}
+              discards={[]} melds={north.melds}
+              flowerCount={north.flowerCount} position="north"
+              isCurrentTurn={currentTurn === 2}
+              onFlowerClick={() => onFlowerClick?.("north")}
+            />
+          </div>
+
+          {/* Table center: 3×3 grid */}
+          <div className="flex-1 min-h-0 bg-black/[.12] rounded-lg overflow-hidden grid grid-rows-[1fr_auto_1fr] grid-cols-[1fr_auto_1fr] gap-2 p-3 border border-white/[.03]">
           {/* (0,0) empty */}
           <div />
           {/* (0,1) north: discards + wall */}
@@ -124,6 +126,7 @@ export default function GameTable({
           {/* (2,2) empty */}
           <div />
         </div>
+        </div>{/* end center column */}
 
         {/* East player hand area */}
         <div className="bg-black/10 rounded-md p-1.5 overflow-hidden" style={{ width: SIDE_W }}>

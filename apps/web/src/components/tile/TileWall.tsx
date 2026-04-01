@@ -3,13 +3,15 @@ interface TileWallProps {
   totalStacks?: number;
   direction: "horizontal" | "vertical";
   consumeFrom?: "start" | "end";
-  /** Which side the top layer offsets toward (faces center of table) */
   faceCenter?: "top" | "bottom" | "left" | "right";
+  /** Tile size preset */
+  tileSize?: "sm" | "md";
 }
 
-const TILE_W = 14;
-const TILE_H = 21;
-const OFFSET = 2;
+const SIZES = {
+  sm: { w: 9, h: 14, offset: 1.5 },
+  md: { w: 14, h: 21, offset: 2 },
+};
 
 export default function TileWall({
   remaining,
@@ -17,7 +19,9 @@ export default function TileWall({
   direction,
   consumeFrom = "start",
   faceCenter = "bottom",
+  tileSize = "md",
 }: TileWallProps) {
+  const { w: TILE_W, h: TILE_H, offset: OFFSET } = SIZES[tileSize];
   const fullStacks = Math.floor(remaining / 2);
   const hasHalf = remaining % 2 === 1;
   const totalVisible = fullStacks + (hasHalf ? 1 : 0);
