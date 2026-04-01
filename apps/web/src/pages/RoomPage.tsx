@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
+import { GamePhase } from "@majiang/shared";
 import { useGameStore } from "../stores/gameStore.js";
 
 export default function RoomPage() {
@@ -18,7 +19,7 @@ export default function RoomPage() {
 
   // When game starts, navigate to /game
   useEffect(() => {
-    if (gameState && gameState.phase === "Playing") {
+    if (gameState && gameState.phase === GamePhase.Playing) {
       navigate("/game");
     }
   }, [gameState, navigate]);
