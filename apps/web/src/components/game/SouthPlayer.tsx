@@ -1,3 +1,4 @@
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import PlayerHand from "./PlayerHand.js";
 import ActionBubbles, { type ActionOption } from "./ActionBubbles.js";
 import Tile from "../tile/Tile.js";
@@ -40,6 +41,9 @@ export default function SouthPlayer({
   onDiscardTile,
   onFlowerClick,
 }: SouthPlayerProps) {
+  const prefersReduced = useReducedMotion();
+  const duration = prefersReduced ? 0 : 0.25;
+
   return (
     <div className="bg-black/10 rounded-md p-2 flex flex-col gap-1.5 relative h-full">
       {/* Action modal — full screen overlay */}
@@ -63,13 +67,21 @@ export default function SouthPlayer({
         {/* Melds */}
         <div className="shrink-0 border border-white/[.12] rounded-sm px-1.5 pt-4 pb-1 flex gap-2 items-end">
           <span className="text-[11px] text-white/30 font-medium">副露</span>
-          {melds.map((meld, i) => (
-            <div key={i} className="flex gap-px">
-              {meld.map((c, j) => (
-                <Tile key={j} char={c} variant="face" size="lg" />
-              ))}
-            </div>
-          ))}
+          <AnimatePresence>
+            {melds.map((meld, i) => (
+              <motion.div
+                key={`meld-${i}-${meld.join(",")}`}
+                initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                transition={{ duration, type: "tween" }}
+                className="flex gap-px"
+              >
+                {meld.map((c, j) => (
+                  <Tile key={j} char={c} variant="face" size="lg" />
+                ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
         {/* Hand tiles */}
         <div className="shrink-0 pt-4 pb-1">
