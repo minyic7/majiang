@@ -9,6 +9,7 @@ import GoldenTileIndicator from "../components/game/GoldenTileIndicator.js";
 import ActionBubbles from "../components/game/ActionBubbles.js";
 import RoundResultModal from "../components/game/RoundResultModal.js";
 import TileTracker from "../components/sidebar/TileTracker.js";
+import ChatPanel from "../components/chat/ChatPanel.js";
 import { useGameData } from "../hooks/useGameData.js";
 import { useTileTracker } from "../hooks/useTileTracker.js";
 import { useGameStore } from "../stores/gameStore.js";
@@ -461,35 +462,16 @@ export default function MobileGamePage() {
               </svg>
             </button>
             {showChat && (
-              <div className="absolute bottom-12 right-0 bg-[#1a2e1a]/80 backdrop-blur-sm border border-white/10 rounded-lg p-3 w-[260px] max-w-[calc(100vw-1rem)] shadow-lg z-50">
-                <div className="text-xs text-white/50 font-semibold mb-1.5">
-                  聊天
-                </div>
-                <div className="flex flex-col gap-1 max-h-28 overflow-y-auto mb-2">
-                  {chatMessages.length === 0 ? (
-                    <div className="text-[11px] text-white/40">
-                      No messages yet
-                    </div>
-                  ) : (
-                    chatMessages.map((msg) => (
-                      <div key={msg.id} className="text-[11px]">
-                        <span className={msg.isMe ? "text-amber-400/70" : "text-white/50"}>
-                          {msg.sender}:
-                        </span>{" "}
-                        <span className="text-white/70">{msg.text}</span>
-                      </div>
-                    ))
-                  )}
-                </div>
-                <input
-                  placeholder="发送消息…"
-                  className="w-full bg-white/[.06] border border-white/10 rounded px-2 py-2 text-[11px] text-white/50 placeholder:text-white/20 outline-none min-h-[36px]"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && e.currentTarget.value.trim()) {
-                      const socket = useGameStore.getState().socket;
-                      if (socket) socket.emit("chatMessage", { text: e.currentTarget.value.trim() });
-                      e.currentTarget.value = "";
-                    }
+              <div className="absolute bottom-12 right-0 w-[260px] max-w-[calc(100vw-1rem)] z-50">
+                <ChatPanel
+                  messages={chatMessages}
+                  onSend={(text) => {
+                    const socket = useGameStore.getState().socket;
+                    if (socket) socket.emit("chatMessage", { text });
+                  }}
+                  onEmoji={(emoji) => {
+                    const socket = useGameStore.getState().socket;
+                    if (socket) socket.emit("chatMessage", { text: emoji });
                   }}
                 />
               </div>
