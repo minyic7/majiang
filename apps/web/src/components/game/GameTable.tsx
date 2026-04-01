@@ -64,7 +64,7 @@ export default function GameTable({
         <div className="bg-black/10 rounded-md p-1.5 overflow-hidden" style={{ width: SIDE_W }}>
           <OpponentArea
             name={west.name} handCount={west.handCount}
-            discards={[]} melds={west.melds}
+            discards={players[1].discards} melds={west.melds}
             flowerCount={west.flowerCount} position="west"
             isCurrentTurn={currentTurn === 1}
             onFlowerClick={() => onFlowerClick?.("west")}
@@ -77,7 +77,7 @@ export default function GameTable({
           <div className="shrink-0 bg-black/10 rounded-md p-1.5 overflow-hidden">
             <OpponentArea
               name={north.name} handCount={north.handCount}
-              discards={[]} melds={north.melds}
+              discards={players[2].discards} melds={north.melds}
               flowerCount={north.flowerCount} position="north"
               isCurrentTurn={currentTurn === 2}
               onFlowerClick={() => onFlowerClick?.("north")}
@@ -166,7 +166,7 @@ export default function GameTable({
         <div className="bg-black/10 rounded-md p-1.5 overflow-hidden" style={{ width: SIDE_W }}>
           <OpponentArea
             name={east.name} handCount={east.handCount}
-            discards={[]} melds={east.melds}
+            discards={players[3].discards} melds={east.melds}
             flowerCount={east.flowerCount} position="east"
             isCurrentTurn={currentTurn === 3}
             onFlowerClick={() => onFlowerClick?.("east")}

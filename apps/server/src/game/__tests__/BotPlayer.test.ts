@@ -76,14 +76,22 @@ describe("BotPlayer", () => {
 
     it("should peng when possible and not hu", () => {
       const actions: AvailableActions = { ...noActions, canPeng: true, canPass: true };
-      const result = BotPlayer.chooseResponseAction(actions, 1);
+      const discardTile = makeTile(10, 5);
+      const result = BotPlayer.chooseResponseAction(actions, 1, undefined, discardTile);
       expect(result.type).toBe(ActionType.Peng);
+      if (result.type === ActionType.Peng) {
+        expect(result.targetTile).toBe(discardTile);
+      }
     });
 
     it("should ming gang when possible and not hu or peng", () => {
       const actions: AvailableActions = { ...noActions, canMingGang: true, canPass: true };
-      const result = BotPlayer.chooseResponseAction(actions, 1);
+      const discardTile = makeTile(10, 5);
+      const result = BotPlayer.chooseResponseAction(actions, 1, undefined, discardTile);
       expect(result.type).toBe(ActionType.MingGang);
+      if (result.type === ActionType.MingGang) {
+        expect(result.targetTile).toBe(discardTile);
+      }
     });
 
     it("should chi when chi options available and no higher priority action", () => {
@@ -102,13 +110,14 @@ describe("BotPlayer", () => {
 
     it("should prefer peng over chi", () => {
       const chiPair: [TileInstance, TileInstance] = [makeTile(0, 2), makeTile(1, 3)];
+      const discardTile = makeTile(10, 5);
       const actions: AvailableActions = {
         ...noActions,
         canPeng: true,
         chiOptions: [chiPair],
         canPass: true,
       };
-      const result = BotPlayer.chooseResponseAction(actions, 1);
+      const result = BotPlayer.chooseResponseAction(actions, 1, undefined, discardTile);
       expect(result.type).toBe(ActionType.Peng);
     });
 

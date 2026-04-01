@@ -100,7 +100,8 @@ export class BotPlayer {
   static chooseResponseAction(
     actions: AvailableActions,
     playerIndex: number,
-    goldenTile?: Tile
+    goldenTile?: Tile,
+    discardTile?: TileInstance
   ): GameAction {
     // Priority: Hu > Peng > MingGang > Chi > Pass
     if (actions.canHu) {
@@ -111,7 +112,7 @@ export class BotPlayer {
       return {
         type: ActionType.Peng,
         playerIndex,
-        targetTile: undefined as never,
+        targetTile: discardTile!,
       };
     }
 
@@ -119,7 +120,7 @@ export class BotPlayer {
       return {
         type: ActionType.MingGang,
         playerIndex,
-        targetTile: undefined as never,
+        targetTile: discardTile!,
       };
     }
 
