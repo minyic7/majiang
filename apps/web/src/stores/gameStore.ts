@@ -10,6 +10,14 @@ import type { ClientEvents, ServerEvents } from "@majiang/shared";
 
 type GameSocket = Socket<ServerEvents, ClientEvents>;
 
+export interface RoundResult {
+  winnerId: number | null;
+  winType: string;
+  scores: number[];
+  payments: number[];
+  breakdown: string[];
+}
+
 interface GameStore {
   // Connection
   connected: boolean;
@@ -25,6 +33,9 @@ interface GameStore {
   gameState: ClientGameState | null;
   availableActions: AvailableActions | null;
 
+  // Round result
+  roundResult: RoundResult | null;
+
   // UI state
   selectedTileId: number | null;
 
@@ -39,6 +50,8 @@ interface GameStore {
   setRoomInfo: (room: RoomInfo) => void;
   setErrorMessage: (msg: string | null) => void;
   setPlayerName: (name: string) => void;
+  setRoundResult: (result: RoundResult | null) => void;
+  clearRoundResult: () => void;
   selectTile: (id: number | null) => void;
   setSocket: (socket: GameSocket | null) => void;
 
@@ -61,6 +74,7 @@ const initialState = {
   errorMessage: null,
   gameState: null,
   availableActions: null,
+  roundResult: null,
   selectedTileId: null,
   socket: null,
 };
@@ -72,6 +86,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setRoom: (roomId, myIndex) => set({ roomId, myIndex }),
   setGameState: (gameState) => set({ gameState }),
   setAvailableActions: (actions) => set({ availableActions: actions }),
+  setRoundResult: (result) => set({ roundResult: result }),
+  clearRoundResult: () => set({ roundResult: null }),
   setRoomInfo: (room) => set({ roomInfo: room }),
   setErrorMessage: (msg) => set({ errorMessage: msg }),
   setPlayerName: (name) => set({ playerName: name }),
