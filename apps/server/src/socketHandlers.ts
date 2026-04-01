@@ -95,6 +95,10 @@ export function registerSocketHandlers(
           socket.emit("actionError", { message: "Room not found", code: "ROOM_NOT_FOUND" });
           return;
         }
+        if (room.state !== "waiting") {
+          socket.emit("actionError", { message: "Game already started", code: "ALREADY_STARTED" });
+          return;
+        }
         if (!room.canStart()) {
           socket.emit("actionError", { message: "Cannot start: need exactly 4 players", code: "CANNOT_START" });
           return;
@@ -266,7 +270,10 @@ function buildCallbacks(
     },
     onGameOver: (result) => {
       io.to(room.id).emit("gameOver", result);
-      // Only transition to finished after all 16 rounds are complete
+      // Only transition to finished after all 16 rounds are complete.
+      // currentRound is incremented by resetForNextRound() BEFORE the round
+      // plays, so when round 16's gameOver fires, currentRound is still 16.
+      // The >= 16 check is therefore correct.
       const currentRound = room.engine?.gameState.currentRound ?? 1;
       if (currentRound >= 16) {
         room.setFinished();
