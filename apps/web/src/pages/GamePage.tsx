@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { TrackerSection, Tile } from "@majiang/shared";
+import { Suit, type TrackerSection, type Tile } from "@majiang/shared";
 import TopBar from "../components/layout/TopBar.js";
 import GameTable from "../components/game/GameTable.js";
 import TileTracker from "../components/sidebar/TileTracker.js";
@@ -54,8 +54,8 @@ const MOCK_HAND = [
 
 const MOCK_DRAWN = { id: 14, char: "fa", suit: "honor" };
 
-const MOCK_FLIPPED_TILE: Tile = { kind: "suited", suit: "wan" as const, value: 2 as const };
-const MOCK_GOLDEN_TILE: Tile = { kind: "suited", suit: "wan" as const, value: 3 as const };
+const MOCK_FLIPPED_TILE: Tile = { kind: "suited", suit: Suit.Wan, value: 2 };
+const MOCK_GOLDEN_TILE: Tile = { kind: "suited", suit: Suit.Wan, value: 3 };
 
 const MOCK_CHAT = [
   { id: "1", sender: "下家", text: "好的！" },

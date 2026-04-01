@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Tile as TileType } from "@majiang/shared";
+import { Suit, type Tile as TileType } from "@majiang/shared";
 import Tile from "../components/tile/Tile.js";
 import TileWall from "../components/tile/TileWall.js";
 import PlayerHand from "../components/game/PlayerHand.js";
@@ -47,8 +47,8 @@ const EAST = {
   melds: [["north","north","north"]],
 };
 
-const MOCK_FLIPPED_TILE: TileType = { kind: "suited", suit: "wan" as const, value: 2 as const };
-const MOCK_GOLDEN_TILE: TileType = { kind: "suited", suit: "wan" as const, value: 3 as const };
+const MOCK_FLIPPED_TILE: TileType = { kind: "suited", suit: Suit.Wan, value: 2 };
+const MOCK_GOLDEN_TILE: TileType = { kind: "suited", suit: Suit.Wan, value: 3 };
 
 const WALL_STACKS = 10;
 const WALL_REMAINING = 120;
