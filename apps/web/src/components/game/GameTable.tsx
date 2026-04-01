@@ -59,7 +59,7 @@ export default function GameTable({
       <div
         className="grid gap-2 flex-1 min-h-0"
         style={{
-          gridTemplateColumns: "120px 1fr 120px",
+          gridTemplateColumns: "160px 1fr 160px",
           gridTemplateRows: "160px 1fr 180px",
         }}
       >

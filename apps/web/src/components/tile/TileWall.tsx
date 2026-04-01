@@ -15,7 +15,7 @@ interface TileWallProps {
 const TILE_W = 14;
 const TILE_H = 9;
 const GAP = 1;
-const LAYER_OFFSET = 2; // top layer offset for 3D effect
+const LAYER_OFFSET = 4; // top layer offset for 3D effect
 
 interface StackPos {
   x: number;
@@ -97,18 +97,18 @@ export default function TileWall({
 
         return (
           <g key={i}>
-            {/* Bottom layer */}
+            {/* Bottom layer (darker) */}
             <rect
               x={p.x}
               y={p.y}
               width={p.w}
               height={p.h}
               rx={1.5}
-              fill="#5C8C48"
-              stroke="#7CAC64"
+              fill="#3D6830"
+              stroke="#5A8848"
               strokeWidth={0.5}
             />
-            {/* Top layer (only if stack has 2 tiles) */}
+            {/* Top layer — brighter, offset for depth (only if stack has 2 tiles) */}
             {tilesInStack === 2 && (
               <rect
                 x={p.x + topDx}
