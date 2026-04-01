@@ -54,11 +54,12 @@ export interface ClientEvents {
   startGame: () => void;
   playerAction: (action: import("./action.js").GameAction) => void;
   nextRound: () => void;
+  reconnect: (data: { roomId: string; playerName: string }) => void;
 }
 
 export interface RoomInfo {
   id: string;
-  players: { name: string; isBot: boolean; ready: boolean }[];
+  players: { name: string; isBot: boolean; ready: boolean; connected: boolean }[];
   ruleSetId: string;
   started: boolean;
 }

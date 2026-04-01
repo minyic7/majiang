@@ -157,6 +157,47 @@ export function registerSocketHandlers(
       }
     });
 
+    socket.on("reconnect", ({ roomId, playerName }) => {
+      try {
+        const room = roomManager.getRoom(roomId);
+        if (!room) {
+          socket.emit("error", "Room not found");
+          return;
+        }
+
+        const playerIdx = room.players.findIndex(
+          (p) => p.name === playerName && !p.isBot
+        );
+        if (playerIdx === -1) {
+          socket.emit("error", "Player not found");
+          return;
+        }
+
+        // Restore socket mapping
+        room.players[playerIdx].socketId = socket.id;
+        socket.join(roomId);
+        socketToRoom.set(socket.id, { roomId, playerIndex: playerIdx });
+
+        // Send current game state
+        if (room.engine) {
+          socket.emit(
+            "gameStateUpdate",
+            room.engine.toClientGameState(playerIdx)
+          );
+        }
+        socket.emit("roomUpdate", room.toRoomInfo());
+        // Notify other players that this player reconnected
+        socket.to(roomId).emit("roomUpdate", room.toRoomInfo());
+
+        console.log(
+          `Player "${playerName}" reconnected to room ${roomId} (seat ${playerIdx})`
+        );
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        socket.emit("error", message);
+      }
+    });
+
     socket.on("disconnect", () => {
       console.log(`Client disconnected: ${socket.id}`);
       const mapping = socketToRoom.get(socket.id);
