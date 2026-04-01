@@ -11,6 +11,7 @@ import TileTracker from "../components/sidebar/TileTracker.js";
 import { useGameData } from "../hooks/useGameData.js";
 import { useTileTracker } from "../hooks/useTileTracker.js";
 import { useGameStore } from "../stores/gameStore.js";
+import { useActionTimer } from "../hooks/useActionTimer.js";
 
 const WALL_STACKS = 10;
 
@@ -52,8 +53,10 @@ export default function MobileGamePage() {
   } = useGameData();
 
   const roundResult = useGameStore((s) => s.roundResult);
+  const chatMessages = useGameStore((s) => s.chatMessages);
   const navigate = useNavigate();
   const trackerSections = useTileTracker();
+  const actionRemaining = useActionTimer();
 
   const prefersReduced = useReducedMotion();
   const dur = prefersReduced ? 0 : 0.15;
@@ -364,7 +367,7 @@ export default function MobileGamePage() {
                 setShowTracker((v) => !v);
                 setShowChat(false);
               }}
-              className="w-8 h-8 rounded-full bg-white/[.08] flex items-center justify-center cursor-pointer hover:bg-white/[.15] transition-colors shadow-sm"
+              className="w-11 h-11 rounded-full bg-white/[.08] flex items-center justify-center cursor-pointer hover:bg-white/[.15] transition-colors shadow-sm"
               title="记牌器"
             >
               <svg
@@ -382,7 +385,7 @@ export default function MobileGamePage() {
               </svg>
             </button>
             {showTracker && trackerSections && (
-              <div className="absolute bottom-10 left-0 bg-[#1a2e1a]/80 backdrop-blur-sm border border-white/10 rounded-lg p-2.5 shadow-lg z-50 w-[260px] max-w-[calc(100vw-1rem)]">
+              <div className="absolute bottom-12 left-0 bg-[#1a2e1a]/80 backdrop-blur-sm border border-white/10 rounded-lg p-2.5 shadow-lg z-50 w-[260px] max-w-[calc(100vw-1rem)]">
                 <TileTracker sections={trackerSections} />
               </div>
             )}
@@ -423,7 +426,7 @@ export default function MobileGamePage() {
                 setShowChat((v) => !v);
                 setShowTracker(false);
               }}
-              className="w-8 h-8 rounded-full bg-white/[.08] flex items-center justify-center cursor-pointer hover:bg-white/[.15] transition-colors shadow-sm"
+              className="w-11 h-11 rounded-full bg-white/[.08] flex items-center justify-center cursor-pointer hover:bg-white/[.15] transition-colors shadow-sm"
               title="聊天"
             >
               <svg
@@ -440,18 +443,36 @@ export default function MobileGamePage() {
               </svg>
             </button>
             {showChat && (
-              <div className="absolute bottom-10 right-0 bg-[#1a2e1a]/80 backdrop-blur-sm border border-white/10 rounded-lg p-3 w-[260px] shadow-lg z-50">
+              <div className="absolute bottom-12 right-0 bg-[#1a2e1a]/80 backdrop-blur-sm border border-white/10 rounded-lg p-3 w-[260px] max-w-[calc(100vw-1rem)] shadow-lg z-50">
                 <div className="text-xs text-white/50 font-semibold mb-1.5">
                   聊天
                 </div>
                 <div className="flex flex-col gap-1 max-h-28 overflow-y-auto mb-2">
-                  <div className="text-[11px] text-white/40">
-                    No messages yet
-                  </div>
+                  {chatMessages.length === 0 ? (
+                    <div className="text-[11px] text-white/40">
+                      No messages yet
+                    </div>
+                  ) : (
+                    chatMessages.map((msg) => (
+                      <div key={msg.id} className="text-[11px]">
+                        <span className={msg.isMe ? "text-amber-400/70" : "text-white/50"}>
+                          {msg.sender}:
+                        </span>{" "}
+                        <span className="text-white/70">{msg.text}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
                 <input
                   placeholder="发送消息…"
-                  className="w-full bg-white/[.06] border border-white/10 rounded px-2 py-1 text-[11px] text-white/50 placeholder:text-white/20 outline-none"
+                  className="w-full bg-white/[.06] border border-white/10 rounded px-2 py-2 text-[11px] text-white/50 placeholder:text-white/20 outline-none min-h-[36px]"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                      const socket = useGameStore.getState().socket;
+                      if (socket) socket.emit("chatMessage", { text: e.currentTarget.value.trim() });
+                      e.currentTarget.value = "";
+                    }
+                  }}
                 />
               </div>
             )}
@@ -459,18 +480,32 @@ export default function MobileGamePage() {
         </div>
       </div>
 
-      {/* Score — fixed on table, top-right of center area */}
-      <div className="absolute top-12 right-14 flex flex-col gap-px z-20 max-w-[80px]">
-        {data.players.map((p, i) => (
+      {/* Score overlay — top-right corner */}
+      <div className="absolute top-2 right-2 flex flex-col gap-px z-20 bg-black/30 backdrop-blur-sm rounded px-1.5 py-1 max-w-[100px]">
+        {data.scores.map((s, i) => (
           <div key={i} className="flex justify-between gap-2">
             <span
-              className={`text-[8px] truncate ${i === 0 ? "text-amber-400/70" : "text-white/30"}`}
+              className={`text-[8px] truncate ${s.isMe ? "text-amber-400/70" : "text-white/30"}`}
             >
-              {p.name}
+              {s.name}
+            </span>
+            <span
+              className={`text-[8px] tabular-nums ${s.isMe ? "text-amber-400/70" : "text-white/40"}`}
+            >
+              {s.score}
             </span>
           </div>
         ))}
       </div>
+
+      {/* Action timeout — floating indicator when ActionBubbles not shown */}
+      {actionRemaining != null && actionRemaining > 0 && !showActions && (
+        <div className="absolute top-2 left-2 z-20">
+          <div className={`flex items-center justify-center rounded-full w-8 h-8 text-sm font-bold backdrop-blur-sm ${actionRemaining <= 5 ? "bg-red-600/80 text-white animate-pulse" : "bg-white/20 text-white/80"}`}>
+            {actionRemaining}
+          </div>
+        </div>
+      )}
 
       {/* Action modal */}
       <ActionBubbles
