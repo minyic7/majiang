@@ -29,25 +29,31 @@ export default function LobbyPage() {
   const [ruleSets, setRuleSets] = useState<RuleSetInfo[]>([]);
   const [rooms, setRooms] = useState<RoomListItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [ruleSetsLoading, setRuleSetsLoading] = useState(true);
+  const [polling, setPolling] = useState(false);
   const quickStartRef = useRef(false);
 
   // Fetch rulesets
   useEffect(() => {
+    setRuleSetsLoading(true);
     fetch(`${API_BASE}/api/rulesets`)
       .then((r) => r.json())
       .then((data: RuleSetInfo[]) => {
         setRuleSets(data);
         if (data.length > 0) setRuleSetId(data[0].id);
       })
-      .catch(() => setErrorMessage("加载失败"));
+      .catch(() => setErrorMessage("加载失败"))
+      .finally(() => setRuleSetsLoading(false));
   }, []);
 
   // Fetch rooms
   const fetchRooms = useCallback(() => {
+    setPolling(true);
     fetch(`${API_BASE}/api/rooms`)
       .then((r) => r.json())
       .then((data: RoomListItem[]) => setRooms(data.filter((r) => !r.started)))
-      .catch(() => setErrorMessage("加载失败"));
+      .catch(() => setErrorMessage("加载失败"))
+      .finally(() => setPolling(false));
   }, []);
 
   useEffect(() => {
@@ -163,18 +169,27 @@ export default function LobbyPage() {
         />
 
         <label className="block text-sm text-neutral-400 mb-1">Rule Set</label>
-        <select
-          value={ruleSetId}
-          onChange={(e) => setRuleSetId(e.target.value)}
-          className="w-full bg-neutral-800 border border-neutral-600 rounded px-3 py-2 text-white mb-4 focus:outline-none focus:border-green-500"
-        >
-          {ruleSets.length === 0 && <option value="">Loading...</option>}
-          {ruleSets.map((rs) => (
-            <option key={rs.id} value={rs.id}>
-              {rs.name}
-            </option>
-          ))}
-        </select>
+        {ruleSetsLoading ? (
+          <div className="w-full bg-neutral-800 border border-neutral-600 rounded px-3 py-2 mb-4 flex items-center gap-2 text-neutral-400">
+            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Loading rulesets...
+          </div>
+        ) : (
+          <select
+            value={ruleSetId}
+            onChange={(e) => setRuleSetId(e.target.value)}
+            className="w-full bg-neutral-800 border border-neutral-600 rounded px-3 py-2 text-white mb-4 focus:outline-none focus:border-green-500"
+          >
+            {ruleSets.map((rs) => (
+              <option key={rs.id} value={rs.id}>
+                {rs.name}
+              </option>
+            ))}
+          </select>
+        )}
 
         <button
           onClick={handleCreateRoom}
@@ -199,14 +214,20 @@ export default function LobbyPage() {
           <h2 className="text-lg font-semibold text-amber-400">Available Rooms</h2>
           <button
             onClick={fetchRooms}
-            className="text-sm text-neutral-400 hover:text-white transition-colors"
+            className="text-sm text-neutral-400 hover:text-white transition-colors flex items-center gap-1.5"
           >
+            {polling && (
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+              </span>
+            )}
             Refresh
           </button>
         </div>
 
         {rooms.length === 0 ? (
-          <p className="text-neutral-500 text-center py-4">No rooms available</p>
+          <p className="text-neutral-500 text-center py-4">暂无房间，创建一个吧！</p>
         ) : (
           <div className="space-y-2">
             {rooms.map((room) => (
