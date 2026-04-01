@@ -1,0 +1,47 @@
+import { useState } from "react";
+import type { TrackerSection } from "@majiang/shared";
+
+interface TileTrackerProps {
+  sections: TrackerSection[];
+}
+
+export default function TileTracker({ sections }: TileTrackerProps) {
+  const [used, setUsed] = useState<Set<string>>(new Set());
+
+  const toggle = (id: string) => {
+    setUsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  return (
+    <div className="bg-white/[.04] border border-white/[.06] rounded-sm p-2">
+      <div className="text-[9px] text-white/28 font-medium tracking-wide uppercase mb-2">记牌器</div>
+      {sections.map((section) => (
+        <div key={section.label} className="mb-2 last:mb-0">
+          <div className="text-[7px] font-medium text-center mb-1" style={{ color: section.color }}>{section.label}</div>
+          <div className={`grid gap-0.5 ${section.tiles.length <= 7 ? "grid-cols-7" : "grid-cols-9"}`}>
+            {section.tiles.map((tile) => {
+              const isUsed = used.has(tile.id);
+              return (
+                <button
+                  key={tile.id}
+                  onClick={() => toggle(tile.id)}
+                  className={`text-center text-[7px] rounded-sm py-0.5 cursor-pointer select-none transition-colors ${
+                    isUsed
+                      ? "bg-red-500/15 text-red-400/60 line-through"
+                      : "bg-white/[.06] text-white/35 hover:bg-white/[.14]"
+                  }`}
+                >
+                  {tile.display}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
