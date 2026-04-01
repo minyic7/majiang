@@ -263,7 +263,7 @@ function buildCallbacks(
       // Only transition to finished after all 16 rounds are complete
       const currentRound = room.engine?.gameState.currentRound ?? 1;
       if (currentRound >= 16) {
-        room.state = "finished";
+        room.setFinished();
       }
     },
   };
