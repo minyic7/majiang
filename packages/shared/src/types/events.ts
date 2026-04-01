@@ -32,7 +32,13 @@ export interface ClientPlayerState {
 export interface ServerEvents {
   gameStateUpdate: (state: ClientGameState) => void;
   actionRequired: (actions: AvailableActions) => void;
-  gameOver: (result: { winnerId: number | null; winType: string; scores: number[] }) => void;
+  gameOver: (result: {
+    winnerId: number | null;
+    winType: string;
+    scores: number[];
+    payments: number[];
+    breakdown: string[];
+  }) => void;
   actionError: (error: { message: string; code: string }) => void;
   roomUpdate: (room: RoomInfo) => void;
   error: (msg: string) => void;
@@ -44,6 +50,7 @@ export interface ClientEvents {
   addBot: (data: { name: string }) => void;
   startGame: () => void;
   playerAction: (action: import("./action.js").GameAction) => void;
+  nextRound: () => void;
 }
 
 export interface RoomInfo {

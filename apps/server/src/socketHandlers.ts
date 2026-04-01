@@ -133,6 +133,10 @@ export function registerSocketHandlers(
       }
     });
 
+    socket.on("nextRound", () => {
+      console.log(`nextRound requested by ${socket.id} — not yet implemented`);
+    });
+
     socket.on("disconnect", () => {
       console.log(`Client disconnected: ${socket.id}`);
       const mapping = socketToRoom.get(socket.id);
