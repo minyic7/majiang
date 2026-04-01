@@ -203,6 +203,19 @@ export function registerSocketHandlers(
       }
     });
 
+    socket.on("chatMessage", ({ text }) => {
+      const mapping = socketToRoom.get(socket.id);
+      if (!mapping) return;
+      const room = roomManager.getRoom(mapping.roomId);
+      if (!room) return;
+      const player = room.players[mapping.playerIndex];
+      io.to(room.id).emit("chatMessage", {
+        sender: player.name,
+        text,
+        timestamp: Date.now(),
+      });
+    });
+
     socket.on("disconnect", () => {
       console.log(`Client disconnected: ${socket.id}`);
       const mapping = socketToRoom.get(socket.id);

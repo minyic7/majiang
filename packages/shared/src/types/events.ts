@@ -46,6 +46,7 @@ export interface ServerEvents {
   actionError: (error: { message: string; code: string }) => void;
   roomUpdate: (room: RoomInfo) => void;
   error: (msg: string) => void;
+  chatMessage: (data: { sender: string; text: string; timestamp: number }) => void;
 }
 
 export interface ClientEvents {
@@ -56,6 +57,7 @@ export interface ClientEvents {
   playerAction: (action: import("./action.js").GameAction) => void;
   nextRound: () => void;
   reconnect: (data: { roomId: string; playerName: string }) => void;
+  chatMessage: (data: { text: string }) => void;
 }
 
 export interface RoomInfo {
