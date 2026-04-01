@@ -25,6 +25,15 @@ export function useSocket() {
 
     socket.on("connect", () => {
       useGameStore.getState().setConnected(true);
+
+      // Auto-reconnect to room if session info exists
+      try {
+        const roomId = sessionStorage.getItem("majiang_roomId");
+        const playerName = sessionStorage.getItem("majiang_playerName");
+        if (roomId && playerName) {
+          socket.emit("reconnect", { roomId, playerName });
+        }
+      } catch { /* sessionStorage unavailable */ }
     });
 
     socket.on("disconnect", () => {

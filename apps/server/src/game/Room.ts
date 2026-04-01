@@ -84,6 +84,7 @@ export class Room {
         name: p.name,
         isBot: p.isBot,
         ready: p.ready,
+        connected: p.isBot || !!p.socketId,
       })),
       ruleSetId: this.ruleSetId,
       started: this.state !== "waiting",

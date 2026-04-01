@@ -100,6 +100,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ playerName });
     socket.emit("createRoom", { playerName, ruleSetId }, (room) => {
       set({ roomInfo: room, roomId: room.id });
+      try {
+        sessionStorage.setItem("majiang_roomId", room.id);
+        sessionStorage.setItem("majiang_playerName", playerName);
+      } catch { /* sessionStorage unavailable */ }
     });
   },
 
@@ -110,6 +114,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     socket.emit("joinRoom", { roomId, playerName }, (room) => {
       if (room) {
         set({ roomInfo: room, roomId: room.id });
+        try {
+          sessionStorage.setItem("majiang_roomId", room.id);
+          sessionStorage.setItem("majiang_playerName", playerName);
+        } catch { /* sessionStorage unavailable */ }
       } else {
         set({ errorMessage: "Failed to join room" });
       }
@@ -135,5 +143,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ availableActions: null });
   },
 
-  reset: () => set({ ...initialState }),
+  reset: () => {
+    try {
+      sessionStorage.removeItem("majiang_roomId");
+      sessionStorage.removeItem("majiang_playerName");
+    } catch { /* sessionStorage unavailable */ }
+    set({ ...initialState });
+  },
 }));
