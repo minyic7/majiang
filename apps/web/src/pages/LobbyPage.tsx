@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router";
+import type { RoomInfo } from "@majiang/shared";
 import { useGameStore } from "../stores/gameStore.js";
 
 interface RuleSetInfo {
@@ -17,7 +18,7 @@ interface RoomListItem {
 
 const API_BASE = import.meta.env.DEV
   ? "http://localhost:7702"
-  : "";
+  : "/majiang";
 
 export default function LobbyPage() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function LobbyPage() {
   const [ruleSets, setRuleSets] = useState<RuleSetInfo[]>([]);
   const [rooms, setRooms] = useState<RoomListItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const quickStartRef = useRef(false);
 
   // Fetch rulesets
   useEffect(() => {
@@ -56,7 +58,7 @@ export default function LobbyPage() {
 
   // Navigate when roomInfo is set (successful create/join)
   useEffect(() => {
-    if (roomInfo) {
+    if (roomInfo && !quickStartRef.current) {
       navigate(`/room/${roomInfo.id}`);
     }
   }, [roomInfo, navigate]);
@@ -84,6 +86,55 @@ export default function LobbyPage() {
     }
     setErrorMessage(null);
     useGameStore.getState().joinRoom(roomId, playerName.trim());
+  };
+
+  const handleQuickStart = () => {
+    const name = playerName.trim() || "玩家";
+    setPlayerName(name);
+    setLoading(true);
+    setErrorMessage(null);
+    quickStartRef.current = true;
+
+    const store = useGameStore.getState();
+    const { socket } = store;
+    if (!socket) {
+      setErrorMessage("Not connected to server");
+      setLoading(false);
+      quickStartRef.current = false;
+      return;
+    }
+
+    socket.emit("createRoom", { playerName: name, ruleSetId: "fuzhou" }, (room: RoomInfo) => {
+      store.setRoomInfo(room);
+      try {
+        sessionStorage.setItem("majiang_roomId", room.id);
+        sessionStorage.setItem("majiang_playerName", name);
+      } catch { /* sessionStorage unavailable */ }
+
+      // Add 3 bots
+      socket.emit("addBot", { name: "Bot-A" });
+      socket.emit("addBot", { name: "Bot-B" });
+      socket.emit("addBot", { name: "Bot-C" });
+
+      // Wait for 4 players via roomUpdate, then start
+      const unsubscribe = useGameStore.subscribe((state) => {
+        if (state.roomInfo && state.roomInfo.players.length >= 4) {
+          unsubscribe();
+          socket.emit("startGame");
+          quickStartRef.current = false;
+          navigate(`/room/${room.id}`);
+          setLoading(false);
+        }
+      });
+
+      // Timeout fallback — navigate to room even if bots didn't all join
+      setTimeout(() => {
+        unsubscribe();
+        quickStartRef.current = false;
+        setLoading(false);
+        navigate(`/room/${room.id}`);
+      }, 10000);
+    });
   };
 
   return (
@@ -131,6 +182,14 @@ export default function LobbyPage() {
           className="w-full bg-green-700 hover:bg-green-600 disabled:bg-neutral-600 text-white font-semibold py-2 rounded transition-colors"
         >
           {loading ? "Creating..." : "Create Room"}
+        </button>
+
+        <button
+          onClick={handleQuickStart}
+          disabled={loading}
+          className="w-full mt-3 bg-amber-600 hover:bg-amber-500 disabled:bg-neutral-600 text-white font-semibold py-2 rounded transition-colors"
+        >
+          {loading ? "Starting..." : "快速开始 Quick Start"}
         </button>
       </div>
 

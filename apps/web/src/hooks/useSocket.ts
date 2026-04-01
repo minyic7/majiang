@@ -14,7 +14,7 @@ export function useSocket() {
 
   useEffect(() => {
     const socket: GameSocket = io(SOCKET_URL, {
-      path: "/socket.io/",
+      path: import.meta.env.DEV ? "/socket.io/" : "/majiang/socket.io/",
       transports: ["websocket", "polling"],
     });
 
