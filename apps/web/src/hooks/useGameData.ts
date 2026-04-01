@@ -3,6 +3,7 @@ import { useGameStore } from "../stores/gameStore.js";
 import type { Tile, TileInstance } from "@majiang/shared";
 import { ActionType } from "@majiang/shared";
 import type { ActionOption } from "../components/game/ActionBubbles.js";
+import { useAudio } from "./useAudio.js";
 
 /** Convert a Tile to the char code expected by the Tile component */
 const DRAGON_MAP: Record<string, string> = {
@@ -76,6 +77,7 @@ export function useGameData() {
   const roomId = useGameStore((s) => s.roomId);
   const selectedTileId = useGameStore((s) => s.selectedTileId);
   const selectTile = useGameStore((s) => s.selectTile);
+  const { play } = useAudio();
 
   const data = useMemo(() => {
     if (!gameState) return null;
@@ -183,11 +185,13 @@ export function useGameData() {
         tiles: targetChar
           ? [{ char: targetChar, highlight: true }]
           : [],
-        onClick: () =>
+        onClick: () => {
+          play("hu");
           submitAction({
             type: ActionType.Hu,
             playerIndex: gameState.myIndex,
-          }),
+          });
+        },
       });
     }
 
@@ -202,12 +206,14 @@ export function useGameData() {
           { char: targetChar },
           { char: targetChar, highlight: true },
         ],
-        onClick: () =>
+        onClick: () => {
+          play("claim");
           submitAction({
             type: ActionType.MingGang,
             playerIndex: gameState.myIndex,
             targetTile: lastDiscard.tile,
-          }),
+          });
+        },
       });
     }
 
@@ -221,12 +227,14 @@ export function useGameData() {
           { char: targetChar },
           { char: targetChar, highlight: true },
         ],
-        onClick: () =>
+        onClick: () => {
+          play("claim");
           submitAction({
             type: ActionType.Peng,
             playerIndex: gameState.myIndex,
             targetTile: lastDiscard.tile,
-          }),
+          });
+        },
       });
     }
 
@@ -242,13 +250,15 @@ export function useGameData() {
         label: "吃",
         color: "rgba(100,220,180,1)",
         tiles,
-        onClick: () =>
+        onClick: () => {
+          play("claim");
           submitAction({
             type: ActionType.Chi,
             playerIndex: gameState.myIndex,
             tiles: pair as [TileInstance, TileInstance],
             targetTile: lastDiscard!.tile,
-          }),
+          });
+        },
       });
     });
 
@@ -258,12 +268,14 @@ export function useGameData() {
         label: "暗杠",
         color: "rgba(230,185,80,1)",
         tiles: group.map(() => ({ char: "", back: true })),
-        onClick: () =>
+        onClick: () => {
+          play("claim");
           submitAction({
             type: ActionType.AnGang,
             playerIndex: gameState.myIndex,
             tile: group[0],
-          }),
+          });
+        },
       });
     });
 
@@ -279,17 +291,19 @@ export function useGameData() {
           { char: code },
           { char: code, highlight: true },
         ],
-        onClick: () =>
+        onClick: () => {
+          play("claim");
           submitAction({
             type: ActionType.BuGang,
             playerIndex: gameState.myIndex,
             tile: opt.tile,
-          }),
+          });
+        },
       });
     });
 
     return opts;
-  }, [availableActions, gameState, submitAction]);
+  }, [availableActions, gameState, submitAction, play]);
 
   const hasActions = actions.length > 0;
   const showActions = hasActions;
@@ -308,6 +322,7 @@ export function useGameData() {
       const hand = gameState?.players[gameState.myIndex].hand ?? [];
       const tile = hand.find((t) => t.id === id);
       if (tile && gameState) {
+        play("discard");
         submitAction({
           type: ActionType.Discard,
           playerIndex: gameState.myIndex,
@@ -325,6 +340,7 @@ export function useGameData() {
     const hand = gameState.players[gameState.myIndex].hand ?? [];
     const tile = hand.find((t) => t.id === id);
     if (tile) {
+      play("discard");
       submitAction({
         type: ActionType.Discard,
         playerIndex: gameState.myIndex,

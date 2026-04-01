@@ -11,18 +11,6 @@ services:
     image: ghcr.io/minyic7/majiang-server:latest
     ports:
       - "7702:7702"
-    depends_on:
-      - redis
     environment:
       - PORT=7702
-      - REDIS_URL=redis://redis:6379
     restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis-data:/data
-    restart: unless-stopped
-
-volumes:
-  redis-data:

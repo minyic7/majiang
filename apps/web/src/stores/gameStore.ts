@@ -45,6 +45,10 @@ interface GameStore {
   /** Epoch ms when the current action window expires (server timeout) */
   actionDeadline: number | null;
 
+  // Audio
+  isMuted: boolean;
+  toggleMute: () => void;
+
   // Socket ref (not serializable, but fine for zustand)
   socket: GameSocket | null;
 
@@ -86,6 +90,7 @@ const initialState = {
   selectedTileId: null,
   actionDeadline: null,
   socket: null,
+  isMuted: false,
 };
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -108,6 +113,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setErrorMessage: (msg) => set({ errorMessage: msg }),
   setPlayerName: (name) => set({ playerName: name }),
   selectTile: (id) => set({ selectedTileId: id }),
+  toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
   setActionDeadline: (deadline) => set({ actionDeadline: deadline }),
   setSocket: (socket) => set({ socket }),
 
