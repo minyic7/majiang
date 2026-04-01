@@ -7,6 +7,7 @@ import { getRequestListener } from "@hono/node-server";
 import type { ClientEvents, ServerEvents } from "@majiang/shared";
 import { getAllRuleSets } from "@majiang/shared";
 import { roomManager } from "./game/Room.js";
+import { registerSocketHandlers } from "./socketHandlers.js";
 
 const app = new Hono();
 
@@ -52,13 +53,7 @@ const io = new Server<ClientEvents, ServerEvents>(httpServer, {
   path: "/socket.io/",
 });
 
-io.on("connection", (socket) => {
-  console.log(`Client connected: ${socket.id}`);
-
-  socket.on("disconnect", () => {
-    console.log(`Client disconnected: ${socket.id}`);
-  });
-});
+registerSocketHandlers(io);
 
 httpServer.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`);
