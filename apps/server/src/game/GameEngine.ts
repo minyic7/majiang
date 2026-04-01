@@ -363,6 +363,11 @@ export class GameEngine {
 
   // --- Action Handlers ---
 
+  /** Check if a player is connected (bots are always "connected") */
+  private isPlayerConnected(playerIndex: number): boolean {
+    return this.players[playerIndex].isBot || !!this.players[playerIndex].socketId;
+  }
+
   private async waitForPlayerAction(
     playerIndex: number,
     actions: AvailableActions,
@@ -370,7 +375,7 @@ export class GameEngine {
   ): Promise<GameAction> {
     this.callbacks.onActionRequired?.(playerIndex, actions, this.actionTimeoutMs);
 
-    if (this.players[playerIndex].isBot) {
+    if (this.players[playerIndex].isBot || !this.isPlayerConnected(playerIndex)) {
       const delayMs = this.callbacks.botDelayMs ?? BotPlayer.getThinkDelay();
       if (delayMs > 0) await this.delay(delayMs);
       return BotPlayer.choosePostDrawAction(
@@ -411,11 +416,14 @@ export class GameEngine {
 
     this.callbacks.onActionRequired?.(playerIndex, actions, this.actionTimeoutMs);
 
-    if (this.players[playerIndex].isBot) {
+    if (this.players[playerIndex].isBot || !this.isPlayerConnected(playerIndex)) {
       const delayMs = this.callbacks.botDelayMs ?? BotPlayer.getThinkDelay();
       if (delayMs > 0) await this.delay(delayMs);
-      const randomIndex = Math.floor(Math.random() * player.hand.length);
-      return { type: ActionType.Discard, playerIndex, tile: player.hand[randomIndex] };
+      return BotPlayer.choosePostDrawAction(
+        { canDraw: false, canDiscard: true, canHu: false, canPeng: false, canMingGang: false, canPass: false, chiOptions: [], anGangOptions: [], buGangOptions: [] },
+        player.hand,
+        playerIndex
+      );
     }
 
     const resolver = new ActionResolver([playerIndex], playerIndex);
@@ -463,9 +471,9 @@ export class GameEngine {
     const resolver = new ActionResolver(respondingPlayers, discarderIndex);
     this.actionResolver = resolver;
 
-    // Bots respond automatically
+    // Bots and disconnected players respond automatically
     for (const p of respondingPlayers) {
-      if (this.players[p].isBot) {
+      if (this.players[p].isBot || !this.isPlayerConnected(p)) {
         const responseActions = this.ruleSet.getResponseActions(
           this.gameState.players[p],
           discardedTile,
@@ -533,9 +541,9 @@ export class GameEngine {
     const resolver = new ActionResolver(respondingPlayers, gangPlayerIndex);
     this.actionResolver = resolver;
 
-    // Bots auto-respond: always claim hu when available
+    // Bots and disconnected players auto-respond: always claim hu when available
     for (const p of respondingPlayers) {
-      if (this.players[p].isBot) {
+      if (this.players[p].isBot || !this.isPlayerConnected(p)) {
         const botDelay = this.callbacks.botDelayMs ?? BotPlayer.getThinkDelay();
         setTimeout(() => {
           resolver.submitAction(p, { type: ActionType.Hu, playerIndex: p });
