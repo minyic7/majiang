@@ -441,6 +441,11 @@ export default function MobileGamePage() {
         <RoundResultModal
           result={roundResult}
           players={gameState.players}
+          onNextRound={() => {
+            useGameStore.getState().clearRoundResult();
+            const socket = useGameStore.getState().socket;
+            if (socket) socket.emit("nextRound");
+          }}
           onClose={() => {
             useGameStore.getState().clearRoundResult();
             navigate("/");
