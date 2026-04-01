@@ -5,7 +5,9 @@ import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { getRequestListener } from "@hono/node-server";
 import type { ClientEvents, ServerEvents } from "@majiang/shared";
-import { getAllRuleSets } from "@majiang/shared";
+import { getAllRuleSets, fuzhouRuleSet } from "@majiang/shared";
+// Force side-effect registration of the Fuzhou ruleset
+void fuzhouRuleSet;
 import { roomManager } from "./game/Room.js";
 import { registerSocketHandlers } from "./socketHandlers.js";
 
