@@ -27,7 +27,7 @@ interface StackPos {
 
 function computePositions(size: number): StackPos[] {
   const positions: StackPos[] = [];
-  const margin = TILE_H + GAP + LAYER_OFFSET; // inset to prevent corner overlap
+  const margin = TILE_H + GAP + LAYER_OFFSET + 8; // inset walls so corners don't overlap
   // Top: left to right
   for (let x = margin; x < size - margin; x += TILE_W + GAP) {
     positions.push({ x, y: margin - TILE_H, w: TILE_W, h: TILE_H, side: "top" });

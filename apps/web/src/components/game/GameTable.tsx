@@ -59,12 +59,12 @@ export default function GameTable({
       <div
         className="grid gap-2 flex-1 min-h-0"
         style={{
-          gridTemplateColumns: "160px 1fr 160px",
-          gridTemplateRows: "100px 1fr 180px",
+          gridTemplateColumns: "140px 1fr 140px",
+          gridTemplateRows: "90px 1fr 180px",
         }}
       >
         {/* West — col1, row1-2 */}
-        <div className="bg-black/30 rounded-md p-1.5" style={{ gridColumn: 1, gridRow: "1 / 3" }}>
+        <div className="bg-black/20 rounded-md p-1" style={{ gridColumn: 1, gridRow: "1 / 3" }}>
           <OpponentArea
             name={west.name}
             handCount={west.handCount}
@@ -78,7 +78,7 @@ export default function GameTable({
         </div>
 
         {/* North — col2, row1 */}
-        <div className="bg-black/30 rounded-md p-1.5" style={{ gridColumn: 2, gridRow: 1 }}>
+        <div className="bg-black/20 rounded-md p-1" style={{ gridColumn: 2, gridRow: 1 }}>
           <OpponentArea
             name={north.name}
             handCount={north.handCount}
@@ -102,7 +102,7 @@ export default function GameTable({
         </div>
 
         {/* East — col3, row1-2 */}
-        <div className="bg-black/30 rounded-md p-1.5" style={{ gridColumn: 3, gridRow: "1 / 3" }}>
+        <div className="bg-black/20 rounded-md p-1" style={{ gridColumn: 3, gridRow: "1 / 3" }}>
           <OpponentArea
             name={east.name}
             handCount={east.handCount}

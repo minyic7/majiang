@@ -21,95 +21,138 @@ export default function OpponentArea({
   isCurrentTurn,
   onFlowerClick,
 }: OpponentAreaProps) {
-  const rotate = position === "west" ? -90 : position === "east" ? 90 : undefined;
-  const tileSize = "sm" as const;
-
   if (position === "north") {
-    return (
-      <div className="flex flex-col gap-1 h-full overflow-hidden">
-        {/* Hand strip */}
-        <div className="shrink-0 flex items-center justify-center h-8">
-          <div className="flex gap-0.5">
-            {Array.from({ length: handCount }, (_, i) => (
-              <Tile key={i} variant="back" size="sm" />
-            ))}
-          </div>
-        </div>
-        {/* Info row */}
-        <div className="flex-1 flex gap-1 min-w-0 overflow-hidden">
-          <Section label="弃牌" className="flex-1 min-w-0 overflow-hidden">
-            <div className="flex flex-wrap gap-px">
-              {discards.map((c, i) => <Tile key={i} char={c} variant="face" size="sm" />)}
-            </div>
-          </Section>
-          <Section label="副露" className="w-20 shrink-0 overflow-hidden">
-            <div className="flex flex-wrap gap-px mt-0.5">
-              {melds.flat().map((c, i) => <Tile key={i} char={c} variant="face" size="sm" />)}
-            </div>
-          </Section>
-          <div className="flex flex-col gap-1 w-9 shrink-0">
-            <div className="flex justify-between items-center">
-              <span className={`text-[9px] font-medium ${isCurrentTurn ? "text-amber-300" : "text-white/45"}`}>{name}</span>
-            </div>
-            <Badge count={handCount} />
-            <FlowerIcon count={flowerCount} onClick={onFlowerClick} />
-          </div>
-        </div>
-      </div>
-    );
+    return <NorthPlayer
+      name={name}
+      handCount={handCount}
+      discards={discards}
+      melds={melds}
+      flowerCount={flowerCount}
+      isCurrentTurn={isCurrentTurn}
+      onFlowerClick={onFlowerClick}
+    />;
   }
 
-  // West or East — vertical layout
-  const isWest = position === "west";
+  return <SidePlayer
+    name={name}
+    handCount={handCount}
+    discards={discards}
+    melds={melds}
+    flowerCount={flowerCount}
+    position={position}
+    isCurrentTurn={isCurrentTurn}
+    onFlowerClick={onFlowerClick}
+  />;
+}
+
+/* ── North (对家) — single compact horizontal strip ── */
+
+function NorthPlayer({
+  name,
+  handCount,
+  discards,
+  melds,
+  flowerCount,
+  isCurrentTurn,
+  onFlowerClick,
+}: Omit<OpponentAreaProps, "position">) {
   return (
-    <div className={`flex ${isWest ? "flex-row" : "flex-row-reverse"} gap-1.5 h-full`}>
-      {/* Hand strip */}
-      <div className="w-6 shrink-0 flex items-center justify-center">
-        <div className="flex flex-col gap-0.5">
-          {Array.from({ length: handCount }, (_, i) => (
-            <Tile key={i} variant="back" size="sm" rotate={rotate} />
+    <div className="flex items-center gap-2 h-full overflow-hidden px-1">
+      {/* Name + badge */}
+      <div className="flex flex-col items-center gap-0.5 shrink-0 w-8">
+        <span className={`text-[9px] font-medium leading-tight ${isCurrentTurn ? "text-amber-300" : "text-white/45"}`}>
+          {name}
+        </span>
+        <Badge count={handCount} />
+      </div>
+
+      {/* Hand backs */}
+      <div className="flex gap-px shrink-0">
+        {Array.from({ length: handCount }, (_, i) => (
+          <Tile key={i} variant="back" size="sm" />
+        ))}
+      </div>
+
+      {/* Discards — compact wrapping grid, max 2 rows */}
+      <div className="flex flex-wrap gap-px content-start max-h-[42px] overflow-hidden flex-1 min-w-0">
+        {discards.map((c, i) => (
+          <Tile key={i} char={c} variant="face" size="sm" />
+        ))}
+      </div>
+
+      {/* Melds */}
+      {melds.length > 0 && (
+        <div className="flex gap-1 shrink-0">
+          {melds.map((meld, i) => (
+            <div key={i} className="flex gap-px">
+              {meld.map((c, j) => (
+                <Tile key={j} char={c} variant="face" size="sm" />
+              ))}
+            </div>
           ))}
         </div>
-      </div>
-      {/* Info */}
-      <div className="flex-1 flex flex-col gap-1 min-h-0">
-        <div className="flex justify-between items-center">
-          <span className={`text-[9px] font-medium ${isCurrentTurn ? "text-amber-300" : "text-white/45"}`}>{name}</span>
-          <Badge count={handCount} />
-          <FlowerIcon count={flowerCount} onClick={onFlowerClick} />
-        </div>
-        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1">
-          <Section label="弃牌" className="shrink-0">
-            <div className="flex flex-col gap-px mt-0.5 items-start">
-              {discards.map((c, i) => (
-                <Tile key={i} char={c} variant="face" size="sm" rotate={rotate} />
-              ))}
-            </div>
-          </Section>
-          {melds.length > 0 && (
-          <Section label="副露" className="shrink-0">
-            <div className="flex flex-col gap-1 mt-0.5">
-              {melds.map((meld, i) => (
-                <div key={i} className="flex gap-px items-center">
-                  {meld.map((c, j) => (
-                    <Tile key={j} char={c} variant="face" size="sm" rotate={rotate} />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </Section>
-          )}
-        </div>
-      </div>
+      )}
+
+      {/* Flower */}
+      <FlowerIcon count={flowerCount} onClick={onFlowerClick} />
     </div>
   );
 }
 
-function Section({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
+/* ── West / East — vertical strip, minimal chrome ── */
+
+function SidePlayer({
+  name,
+  handCount,
+  discards,
+  melds,
+  flowerCount,
+  position,
+  isCurrentTurn,
+  onFlowerClick,
+}: OpponentAreaProps) {
+  const rotate = position === "west" ? -90 : 90;
+  const isWest = position === "west";
+
   return (
-    <div className={`bg-white/[.07] border border-white/[.13] rounded-sm p-1 ${className}`}>
-      <span className="text-[8px] text-white/35 font-medium block">{label}</span>
-      {children}
+    <div className="flex flex-col gap-1 h-full overflow-hidden">
+      {/* Top: name + badge + flower */}
+      <div className="flex items-center gap-1 shrink-0 px-0.5">
+        <span className={`text-[9px] font-medium flex-1 truncate ${isCurrentTurn ? "text-amber-300" : "text-white/45"}`}>
+          {name}
+        </span>
+        <Badge count={handCount} />
+        <FlowerIcon count={flowerCount} onClick={onFlowerClick} />
+      </div>
+
+      {/* Hand backs — rotated tiles vertically */}
+      <div className={`flex flex-col gap-px items-center shrink-0 ${isWest ? "" : ""}`}>
+        {Array.from({ length: handCount }, (_, i) => (
+          <Tile key={i} variant="back" size="sm" rotate={rotate} />
+        ))}
+      </div>
+
+      {/* Discards — rotated, compact vertical list */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex flex-wrap gap-px content-start items-start justify-center">
+          {discards.map((c, i) => (
+            <Tile key={i} char={c} variant="face" size="sm" rotate={rotate} />
+          ))}
+        </div>
+      </div>
+
+      {/* Melds — rotated groups */}
+      {melds.length > 0 && (
+        <div className="flex flex-col gap-1 shrink-0 items-center">
+          {melds.map((meld, i) => (
+            <div key={i} className="flex gap-px">
+              {meld.map((c, j) => (
+                <Tile key={j} char={c} variant="face" size="sm" rotate={rotate} />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -126,7 +169,7 @@ function FlowerIcon({ count, onClick }: { count: number; onClick?: () => void })
   return (
     <span
       onClick={onClick}
-      className="text-[13px] cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+      className="text-[13px] cursor-pointer opacity-70 hover:opacity-100 transition-opacity shrink-0"
       title={`花牌 (${count})`}
     >
       🌸{count > 0 && <sup className="text-[7px] text-green-400">{count}</sup>}
