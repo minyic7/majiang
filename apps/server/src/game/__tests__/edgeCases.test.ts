@@ -734,3 +734,112 @@ describe("Edge case: Golden Tile Bonus Skip", () => {
     }
   }, 60000);
 });
+
+// ─── 6. Consecutive Gang Limit Per Turn ───
+
+describe("Edge case: Consecutive gang limit per turn", () => {
+  it("should not offer a second anGang after the first anGang in the same turn", async () => {
+    // RuleSet that always offers anGang when 4-of-a-kind exist, never wins
+    const GangLimitStub: RuleSet = {
+      ...StubRuleSet,
+      id: "gang-limit-stub",
+      name: "Gang Limit Stub",
+      checkWin() {
+        return { isWin: false, winType: "" };
+      },
+      getResponseActions() {
+        return {
+          canDraw: false,
+          canDiscard: false,
+          canHu: false,
+          canPeng: false,
+          canMingGang: false,
+          canPass: true,
+          chiOptions: [],
+          anGangOptions: [],
+          buGangOptions: [],
+        };
+      },
+    };
+
+    const engine = new GameEngine(GangLimitStub, botPlayers, { botDelayMs: 0 });
+    (engine as any).shuffle = () => {};
+    (engine as any).deal();
+
+    const gs = engine.gameState;
+    const turnIdx = gs.currentTurn;
+    const player = gs.players[turnIdx];
+
+    // Give the player two sets of 4-of-a-kind so the ruleset would normally offer two anGangs
+    player.hand = [
+      ti(900, wan(1)), ti(901, wan(1)), ti(902, wan(1)), ti(903, wan(1)),
+      ti(904, wan(2)), ti(905, wan(2)), ti(906, wan(2)), ti(907, wan(2)),
+      ti(908, wan(3)), ti(909, wan(4)), ti(910, wan(5)), ti(911, wan(6)),
+      ti(912, wan(7)),
+    ];
+
+    // Put a replacement tile on wallTail for the gang draw
+    gs.wallTail.unshift(ti(950, wan(8)));
+
+    // Step 1: Normal draw
+    const drawn = (engine as any).drawTileForPlayer(turnIdx);
+    expect(drawn).not.toBeNull();
+
+    // Before any gang, ruleset should offer anGang options (two sets of 4)
+    const actions1 = GangLimitStub.getPostDrawActions(player, drawn, {
+      gameState: gs,
+      playerIndex: turnIdx,
+    });
+    expect(actions1.anGangOptions.length).toBe(2);
+
+    // Execute first anGang
+    const gangTile = actions1.anGangOptions[0][0];
+    (engine as any).executeAnGang(turnIdx, gangTile);
+
+    // Simulate what playLoop does: set gangDrawPending, draw from tail
+    (engine as any).gangDrawPending = true;
+    const replacement = (engine as any).drawTileForPlayerFromTail(turnIdx);
+    expect(replacement).not.toBeNull();
+
+    // After the gang draw, ruleset still reports anGang options for the remaining 4-of-a-kind
+    const actions2 = GangLimitStub.getPostDrawActions(player, replacement, {
+      gameState: gs,
+      playerIndex: turnIdx,
+    });
+    expect(actions2.anGangOptions.length).toBeGreaterThan(0);
+
+    // Verify via a full playLoop that the second gang is suppressed.
+    // Use a short wall so the game ends before the player gets a second turn.
+    const engine2 = new GameEngine(GangLimitStub, botPlayers, { botDelayMs: 0 });
+    (engine2 as any).shuffle = () => {};
+    (engine2 as any).deal();
+
+    const gs2 = engine2.gameState;
+    const turnIdx2 = gs2.currentTurn;
+    const player2 = gs2.players[turnIdx2];
+
+    player2.hand = [
+      ti(900, wan(1)), ti(901, wan(1)), ti(902, wan(1)), ti(903, wan(1)),
+      ti(904, wan(2)), ti(905, wan(2)), ti(906, wan(2)), ti(907, wan(2)),
+      ti(908, wan(3)), ti(909, wan(4)), ti(910, wan(5)), ti(911, wan(6)),
+      ti(912, wan(7)),
+    ];
+
+    // Minimal wall: 1 tile for the current player's draw + 3 for the remaining players
+    gs2.wall = [ti(960, bing(1)), ti(961, bing(2)), ti(962, bing(3)), ti(963, bing(4))];
+    // 1 replacement tile on wallTail for the gang draw
+    gs2.wallTail = [ti(950, wan(8))];
+
+    // Spy on executeAnGang to count how many gangs happen
+    const anGangSpy = vi.spyOn(engine2 as any, "executeAnGang");
+
+    await (engine2 as any).playLoop();
+
+    // The player should have executed exactly 1 anGang (the limit prevents a second)
+    expect(anGangSpy).toHaveBeenCalledTimes(1);
+    const gangMelds = player2.melds.filter(
+      (m: any) => m.type === MeldType.AnGang || m.type === MeldType.BuGang
+    );
+    expect(gangMelds.length).toBe(1);
+  }, 30000);
+});

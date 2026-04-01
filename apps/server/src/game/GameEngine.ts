@@ -231,8 +231,17 @@ export class GameEngine {
   // --- Playing Phase ---
 
   private async playLoop(): Promise<void> {
+    let gangThisTurn = 0;
+    let lastTurn = -1;
+
     while (this.gameState.phase === GamePhase.Playing) {
       const turn = this.gameState.currentTurn;
+
+      // Reset gang counter when the active player changes
+      if (turn !== lastTurn) {
+        gangThisTurn = 0;
+        lastTurn = turn;
+      }
 
       // Draw a tile (from wallTail after gang, otherwise from wall)
       let drawn: TileInstance | null;
@@ -256,6 +265,12 @@ export class GameEngine {
         { gameState: this.gameState, playerIndex: turn }
       );
 
+      // Limit consecutive self-gangs to 1 per turn
+      if (gangThisTurn >= 1) {
+        postDrawActions.anGangOptions = [];
+        postDrawActions.buGangOptions = [];
+      }
+
       // Wait for player action
       const postDrawAction = await this.waitForPlayerAction(turn, postDrawActions, drawn);
 
@@ -269,6 +284,7 @@ export class GameEngine {
       if (postDrawAction.type === ActionType.AnGang) {
         this.executeAnGang(turn, postDrawAction.tile);
         this.gangDrawPending = true;
+        gangThisTurn++;
         continue;
       }
 
@@ -289,6 +305,7 @@ export class GameEngine {
           // All passed — proceed with gang draw
           this.gangDrawPending = true;
         }
+        gangThisTurn++;
         continue;
       }
 
