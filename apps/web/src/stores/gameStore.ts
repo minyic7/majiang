@@ -4,6 +4,7 @@ import type {
   AvailableActions,
   RoomInfo,
   GameAction,
+  GameOverResult,
 } from "@majiang/shared";
 import type { Socket } from "socket.io-client";
 import type { ClientEvents, ServerEvents } from "@majiang/shared";
@@ -25,6 +26,9 @@ interface GameStore {
   gameState: ClientGameState | null;
   availableActions: AvailableActions | null;
 
+  // Game over
+  gameOverResult: GameOverResult | null;
+
   // UI state
   selectedTileId: number | null;
 
@@ -37,6 +41,7 @@ interface GameStore {
   setGameState: (state: ClientGameState) => void;
   setAvailableActions: (actions: AvailableActions | null) => void;
   setRoomInfo: (room: RoomInfo) => void;
+  setGameOverResult: (result: GameOverResult | null) => void;
   setErrorMessage: (msg: string | null) => void;
   setPlayerName: (name: string) => void;
   selectTile: (id: number | null) => void;
@@ -61,6 +66,7 @@ const initialState = {
   errorMessage: null,
   gameState: null,
   availableActions: null,
+  gameOverResult: null,
   selectedTileId: null,
   socket: null,
 };
@@ -73,6 +79,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setGameState: (gameState) => set({ gameState }),
   setAvailableActions: (actions) => set({ availableActions: actions }),
   setRoomInfo: (room) => set({ roomInfo: room }),
+  setGameOverResult: (result) => set({ gameOverResult: result }),
   setErrorMessage: (msg) => set({ errorMessage: msg }),
   setPlayerName: (name) => set({ playerName: name }),
   selectTile: (id) => set({ selectedTileId: id }),

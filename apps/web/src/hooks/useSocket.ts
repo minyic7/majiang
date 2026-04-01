@@ -40,7 +40,7 @@ export function useSocket() {
     });
 
     socket.on("gameOver", (result) => {
-      console.log("Game over:", result);
+      useGameStore.getState().setGameOverResult(result);
     });
 
     socket.on("roomUpdate", (room) => {

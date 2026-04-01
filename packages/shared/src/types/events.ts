@@ -28,11 +28,21 @@ export interface ClientPlayerState {
   seatWind: string;
 }
 
+export interface GameOverResult {
+  winnerId: number | null;
+  winType: string;
+  scores: number[];
+  payments?: number[];
+  breakdown?: string[];
+  winnerHand?: TileInstance[];
+  winnerMelds?: PlayerState["melds"];
+}
+
 /** Socket.IO event types */
 export interface ServerEvents {
   gameStateUpdate: (state: ClientGameState) => void;
   actionRequired: (actions: AvailableActions) => void;
-  gameOver: (result: { winnerId: number | null; winType: string; scores: number[] }) => void;
+  gameOver: (result: GameOverResult) => void;
   actionError: (error: { message: string; code: string }) => void;
   roomUpdate: (room: RoomInfo) => void;
   error: (msg: string) => void;

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { Suit, type Tile } from "@majiang/shared";
 import TopBar from "../components/layout/TopBar.js";
 import GameTable from "../components/game/GameTable.js";
@@ -6,8 +7,10 @@ import TileTracker from "../components/sidebar/TileTracker.js";
 import ScoreBoard from "../components/sidebar/ScoreBoard.js";
 import RoundInfo from "../components/sidebar/RoundInfo.js";
 import ChatPanel from "../components/chat/ChatPanel.js";
+import RoundResultModal from "../components/game/RoundResultModal.js";
 import type { ActionOption } from "../components/game/ActionBubbles.js";
 import { useTileTracker } from "../hooks/useTileTracker.js";
+import { useGameStore } from "../stores/gameStore.js";
 
 const MOCK_SCORES = [
   { name: "下家", score: 32 },
@@ -45,7 +48,10 @@ const MOCK_CHAT = [
 ];
 
 export default function GamePage() {
+  const navigate = useNavigate();
   const trackerSections = useTileTracker();
+  const gameState = useGameStore((s) => s.gameState);
+  const gameOverResult = useGameStore((s) => s.gameOverResult);
   const [selectedTile, setSelectedTile] = useState<number | null>(null);
   const [showActions, setShowActions] = useState(true);
   const [chatMessages, setChatMessages] = useState(MOCK_CHAT);
@@ -103,11 +109,21 @@ export default function GamePage() {
         {/* Left sidebar */}
         <div className="w-52 shrink-0 flex flex-col gap-1.5 bg-white/[.02] border border-white/[.07] rounded-xl p-2 overflow-y-auto">
           {trackerSections && <TileTracker sections={trackerSections} />}
-          <ScoreBoard scores={MOCK_SCORES} />
+          <ScoreBoard
+            scores={
+              gameState
+                ? gameState.players.map((p, i) => ({
+                    name: p.name,
+                    score: 0,
+                    isMe: i === gameState.myIndex,
+                  }))
+                : MOCK_SCORES
+            }
+          />
           <RoundInfo
             roundLabel="东风 · 第一局"
-            dealerName="下家"
-            wallRemaining={120}
+            dealerName={gameState ? gameState.players[gameState.dealerIndex].name : "下家"}
+            wallRemaining={gameState ? gameState.wallRemaining : 120}
           />
         </div>
 
@@ -185,6 +201,17 @@ export default function GamePage() {
           />
         </div>
       </div>
+
+      {gameOverResult && gameState && (
+        <RoundResultModal
+          result={gameOverResult}
+          players={gameState.players}
+          onClose={() => {
+            useGameStore.getState().reset();
+            navigate("/");
+          }}
+        />
+      )}
     </div>
   );
 }

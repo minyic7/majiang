@@ -24,7 +24,7 @@ const ACTION_TIMEOUT_MS = 15000;
 export interface GameEngineCallbacks {
   onStateUpdate?: (playerIndex: number, state: ClientGameState) => void;
   onActionRequired?: (playerIndex: number, actions: AvailableActions) => void;
-  onGameOver?: (result: { winnerId: number | null; winType: string; scores: number[] }) => void;
+  onGameOver?: (result: import("@majiang/shared").GameOverResult) => void;
   /** Set to 0 for tests to skip bot delays */
   botDelayMs?: number;
 }
@@ -569,6 +569,10 @@ export class GameEngine {
       winnerId: playerIndex,
       winType: winResult.winType ?? "hu",
       scores: [...this.scores],
+      payments: scoreResult.payments,
+      breakdown: scoreResult.breakdown,
+      winnerHand: [...player.hand],
+      winnerMelds: player.melds,
     });
 
     return true;

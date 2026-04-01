@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { Suit, type Tile as TileType } from "@majiang/shared";
 import Tile from "../components/tile/Tile.js";
 import TileWall from "../components/tile/TileWall.js";
@@ -6,7 +7,9 @@ import PlayerHand from "../components/game/PlayerHand.js";
 import GoldenTileIndicator from "../components/game/GoldenTileIndicator.js";
 import ActionBubbles, { type ActionOption } from "../components/game/ActionBubbles.js";
 import TileTracker from "../components/sidebar/TileTracker.js";
+import RoundResultModal from "../components/game/RoundResultModal.js";
 import { useTileTracker } from "../hooks/useTileTracker.js";
+import { useGameStore } from "../stores/gameStore.js";
 
 // ─── Mock data (same as desktop) ───
 
@@ -80,7 +83,10 @@ const SCORES = [
 ];
 
 export default function MobileGamePage() {
+  const navigate = useNavigate();
   const trackerSections = useTileTracker();
+  const gameState = useGameStore((s) => s.gameState);
+  const gameOverResult = useGameStore((s) => s.gameOverResult);
   const [selectedTile, setSelectedTile] = useState<number | null>(null);
   const [showActions, setShowActions] = useState(true);
   const [showTracker, setShowTracker] = useState(false);
@@ -275,6 +281,17 @@ export default function MobileGamePage() {
         discardHint={selectedTile !== null && !showActions}
         onPass={() => setShowActions(false)}
       />
+
+      {gameOverResult && gameState && (
+        <RoundResultModal
+          result={gameOverResult}
+          players={gameState.players}
+          onClose={() => {
+            useGameStore.getState().reset();
+            navigate("/");
+          }}
+        />
+      )}
     </div>
   );
 }
