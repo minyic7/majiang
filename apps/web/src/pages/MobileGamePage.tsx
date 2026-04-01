@@ -74,7 +74,7 @@ const SCORES = [
 
 export default function MobileGamePage() {
   const [selectedTile, setSelectedTile] = useState<number | null>(null);
-  const [showActions, setShowActions] = useState(false);
+  const [showActions, setShowActions] = useState(true);
   const [showTracker, setShowTracker] = useState(false);
   const [showChat, setShowChat] = useState(false);
 
