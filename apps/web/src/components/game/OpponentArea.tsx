@@ -26,25 +26,25 @@ export default function OpponentArea({
 
   if (position === "north") {
     return (
-      <div className="flex flex-col gap-1.5 h-full">
+      <div className="flex flex-col gap-1 h-full overflow-hidden">
         {/* Hand strip */}
-        <div className="shrink-0 flex items-center justify-center h-12">
+        <div className="shrink-0 flex items-center justify-center h-8">
           <div className="flex gap-0.5">
             {Array.from({ length: handCount }, (_, i) => (
-              <Tile key={i} variant="back" size="md" />
+              <Tile key={i} variant="back" size="sm" />
             ))}
           </div>
         </div>
         {/* Info row */}
-        <div className="flex-1 flex gap-1 min-w-0">
-          <Section label="弃牌区" className="flex-1 min-w-0">
+        <div className="flex-1 flex gap-1 min-w-0 overflow-hidden">
+          <Section label="弃牌" className="flex-1 min-w-0 overflow-hidden">
             <div className="flex flex-wrap gap-px">
-              {discards.map((c, i) => <Tile key={i} char={c} variant="face" size="md" />)}
+              {discards.map((c, i) => <Tile key={i} char={c} variant="face" size="sm" />)}
             </div>
           </Section>
-          <Section label="副露" className="w-24 shrink-0">
+          <Section label="副露" className="w-20 shrink-0 overflow-hidden">
             <div className="flex flex-wrap gap-px mt-0.5">
-              {melds.flat().map((c, i) => <Tile key={i} char={c} variant="face" size="md" />)}
+              {melds.flat().map((c, i) => <Tile key={i} char={c} variant="face" size="sm" />)}
             </div>
           </Section>
           <div className="flex flex-col gap-1 w-9 shrink-0">

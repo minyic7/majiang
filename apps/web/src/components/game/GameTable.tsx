@@ -60,7 +60,7 @@ export default function GameTable({
         className="grid gap-2 flex-1 min-h-0"
         style={{
           gridTemplateColumns: "160px 1fr 160px",
-          gridTemplateRows: "160px 1fr 180px",
+          gridTemplateRows: "100px 1fr 180px",
         }}
       >
         {/* West — col1, row1-2 */}

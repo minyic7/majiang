@@ -15,7 +15,7 @@ interface TileWallProps {
 const TILE_W = 14;
 const TILE_H = 9;
 const GAP = 1;
-const LAYER_OFFSET = 4; // top layer offset for 3D effect
+const LAYER_OFFSET = 2.5; // top layer offset for subtle 3D effect
 
 interface StackPos {
   x: number;
@@ -27,21 +27,22 @@ interface StackPos {
 
 function computePositions(size: number): StackPos[] {
   const positions: StackPos[] = [];
-  // Top: left to right (draw direction →)
-  for (let x = 0; x < size - TILE_W; x += TILE_W + GAP) {
-    positions.push({ x, y: 0, w: TILE_W, h: TILE_H, side: "top" });
+  const margin = TILE_H + GAP + LAYER_OFFSET; // inset to prevent corner overlap
+  // Top: left to right
+  for (let x = margin; x < size - margin; x += TILE_W + GAP) {
+    positions.push({ x, y: margin - TILE_H, w: TILE_W, h: TILE_H, side: "top" });
   }
   // Right: top to bottom
-  for (let y = TILE_H + GAP; y < size - TILE_W; y += TILE_W + GAP) {
-    positions.push({ x: size - TILE_H, y, w: TILE_H, h: TILE_W, side: "right" });
+  for (let y = margin; y < size - margin; y += TILE_W + GAP) {
+    positions.push({ x: size - margin, y, w: TILE_H, h: TILE_W, side: "right" });
   }
   // Bottom: right to left
-  for (let x = size - TILE_W; x >= TILE_H; x -= TILE_W + GAP) {
-    positions.push({ x, y: size - TILE_H, w: TILE_W, h: TILE_H, side: "bottom" });
+  for (let x = size - margin - TILE_W; x >= margin; x -= TILE_W + GAP) {
+    positions.push({ x, y: size - margin, w: TILE_W, h: TILE_H, side: "bottom" });
   }
   // Left: bottom to top
-  for (let y = size - TILE_W; y > TILE_H + GAP; y -= TILE_W + GAP) {
-    positions.push({ x: 0, y, w: TILE_H, h: TILE_W, side: "left" });
+  for (let y = size - margin - TILE_W; y >= margin; y -= TILE_W + GAP) {
+    positions.push({ x: margin - TILE_H, y, w: TILE_H, h: TILE_W, side: "left" });
   }
   return positions;
 }

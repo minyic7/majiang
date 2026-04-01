@@ -95,7 +95,7 @@ export default function GamePage() {
           <RoundInfo
             roundLabel="东风 · 第一局"
             dealerName="下家"
-            wallRemaining={56}
+            wallRemaining={120}
           />
         </div>
 
@@ -132,7 +132,7 @@ export default function GamePage() {
                 flowerCount: 0,
               },
             ]}
-            wallRemaining={56}
+            wallRemaining={120}
             roundLabel="东风 · 第一局"
             currentTurn={0}
             selectedTileId={selectedTile}
