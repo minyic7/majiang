@@ -29,6 +29,7 @@ namespace Majiang.Prototype
         Dot7,
         Dot8,
         Dot9,
+        DragonBlank,
         DragonRed,
         DragonGreen,
         DragonWhite,

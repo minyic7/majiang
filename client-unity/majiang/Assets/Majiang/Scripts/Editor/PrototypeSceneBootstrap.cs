@@ -17,8 +17,8 @@ namespace Majiang.Editor
             var cameraObject = new GameObject("Main Camera");
             var camera = cameraObject.AddComponent<Camera>();
             cameraObject.tag = "MainCamera";
-            camera.transform.position = new Vector3(0f, 6.4f, -5.8f);
-            camera.transform.rotation = Quaternion.Euler(48f, 0f, 0f);
+            camera.transform.position = new Vector3(0f, 7.2f, -6.6f);
+            camera.transform.rotation = Quaternion.Euler(43f, 0f, 0f);
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.12f, 0.21f, 0.35f, 1f);
 
@@ -45,28 +45,6 @@ namespace Majiang.Editor
 
             controller.wallRoot = new GameObject("WallRoot").transform;
             controller.wallRoot.SetParent(controllerObject.transform, false);
-
-            var playersRoot = new GameObject("Players").transform;
-            playersRoot.SetParent(controllerObject.transform, false);
-            controller.southHandRoot = new GameObject("PlayerSouth").transform;
-            controller.southHandRoot.SetParent(playersRoot, false);
-            controller.westHandRoot = new GameObject("PlayerWest").transform;
-            controller.westHandRoot.SetParent(playersRoot, false);
-            controller.northHandRoot = new GameObject("PlayerNorth").transform;
-            controller.northHandRoot.SetParent(playersRoot, false);
-            controller.eastHandRoot = new GameObject("PlayerEast").transform;
-            controller.eastHandRoot.SetParent(playersRoot, false);
-
-            var discardsRoot = new GameObject("Discards").transform;
-            discardsRoot.SetParent(controllerObject.transform, false);
-            controller.southDiscardsRoot = new GameObject("South").transform;
-            controller.southDiscardsRoot.SetParent(discardsRoot, false);
-            controller.westDiscardsRoot = new GameObject("West").transform;
-            controller.westDiscardsRoot.SetParent(discardsRoot, false);
-            controller.northDiscardsRoot = new GameObject("North").transform;
-            controller.northDiscardsRoot.SetParent(discardsRoot, false);
-            controller.eastDiscardsRoot = new GameObject("East").transform;
-            controller.eastDiscardsRoot.SetParent(discardsRoot, false);
 
             EditorSceneManager.MarkSceneDirty(scene);
             const string scenePath = "Assets/Scenes/GamePrototype.unity";

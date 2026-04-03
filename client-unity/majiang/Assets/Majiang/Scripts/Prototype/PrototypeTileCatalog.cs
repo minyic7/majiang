@@ -39,6 +39,7 @@ namespace Majiang.Prototype
                 case PrototypeTileId.Dot7: return "Assets/MahjongTiles/Prefabs/Dots/Dot_7.prefab";
                 case PrototypeTileId.Dot8: return "Assets/MahjongTiles/Prefabs/Dots/Dot_8.prefab";
                 case PrototypeTileId.Dot9: return "Assets/MahjongTiles/Prefabs/Dots/Dot_9.prefab";
+                case PrototypeTileId.DragonBlank: return "Assets/MahjongTiles/Prefabs/Dragons/Dragon_Blank.prefab";
                 case PrototypeTileId.DragonRed: return "Assets/MahjongTiles/Prefabs/Dragons/Dragon_Red.prefab";
                 case PrototypeTileId.DragonGreen: return "Assets/MahjongTiles/Prefabs/Dragons/Dragon_Green.prefab";
                 case PrototypeTileId.DragonWhite: return "Assets/MahjongTiles/Prefabs/Dragons/Dragon_White.prefab";
@@ -81,6 +82,7 @@ namespace Majiang.Prototype
                 case PrototypeTileId.Dot7: return "D7";
                 case PrototypeTileId.Dot8: return "D8";
                 case PrototypeTileId.Dot9: return "D9";
+                case PrototypeTileId.DragonBlank: return "Blank";
                 case PrototypeTileId.DragonRed: return "Red";
                 case PrototypeTileId.DragonGreen: return "Green";
                 case PrototypeTileId.DragonWhite: return "White";

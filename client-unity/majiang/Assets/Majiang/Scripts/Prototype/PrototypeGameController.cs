@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,205 +8,230 @@ namespace Majiang.Prototype
         [Header("Scene References")]
         public Transform tableRoot;
         public Transform wallRoot;
-        public Transform southHandRoot;
-        public Transform westHandRoot;
-        public Transform northHandRoot;
-        public Transform eastHandRoot;
-        public Transform southDiscardsRoot;
-        public Transform westDiscardsRoot;
-        public Transform northDiscardsRoot;
-        public Transform eastDiscardsRoot;
 
-        [Header("Layout")]
-        public float localHandSpacing = 0.82f;
-        public float localHandLift = 0.18f;
-        public float localHandScale = 0.9f;
-        public float discardSpacing = 0.72f;
-        public float aiTurnDelaySeconds = 0.55f;
+        [Header("Table")]
+        public float planeScale = 0.72f;
+        public Color tableColor = new Color(0.16f, 0.44f, 0.32f, 1f);
 
-        private readonly List<PrototypeTileId>[] _hands =
-        {
-            new List<PrototypeTileId>(),
-            new List<PrototypeTileId>(),
-            new List<PrototypeTileId>(),
-            new List<PrototypeTileId>(),
-        };
-
-        private readonly List<PrototypeTileId>[] _discards =
-        {
-            new List<PrototypeTileId>(),
-            new List<PrototypeTileId>(),
-            new List<PrototypeTileId>(),
-            new List<PrototypeTileId>(),
-        };
+        [Header("Wall Ratios")]
+        public float outerMarginRatio = 0.11f;
+        public float stackGapRatio = 0f;
+        public float stackOverlapRatio = 0f;
+        public float cornerGapRatio = 0.02f;
+        public float wallHorizontalScaleMultiplier = 1f;
 
         private readonly List<GameObject> _spawnedVisuals = new List<GameObject>();
-        private readonly List<PrototypeTileId> _wall = new List<PrototypeTileId>();
 
-        private bool _awaitingLocalDiscard;
-        private bool _roundFinished;
-        private int _currentPlayer;
-        private string _statusMessage = "Ready";
-
-        private readonly Color _tableWood = new Color(0.29f, 0.18f, 0.14f, 1f);
-        private readonly Color _tableFelt = new Color(0.18f, 0.42f, 0.29f, 1f);
-        private readonly Color _aiTileColor = new Color(0.12f, 0.5f, 0.36f, 1f);
+        private float _planeSide;
+        private float _tileWidthTarget;
+        private float _tileHeightTarget;
+        private float _tileDepthTarget;
+        private float _tileScale;
+        private float _stackGap;
+        private float _stackOverlap;
+        private float _cornerGap;
+        private Vector3 _southWallTileSize;
+        private Vector3 _westWallTileSize;
+        private Vector3 _wallTileScale;
 
         private void Start()
         {
             EnsureSceneReferences();
             BuildTableIfMissing();
-            StartPrototypeRound();
+            CalculateGeometry();
+            RenderInitialWalls();
         }
 
-        public void TryDiscardLocalTile(int handIndex)
+        private void CalculateGeometry()
         {
-            if (!_awaitingLocalDiscard || _roundFinished)
+            _planeSide = planeScale * 10f;
+
+            var blankPrefab = PrototypeTileCatalog.LoadPrefab(PrototypeTileId.DragonBlank);
+            if (blankPrefab == null)
+            {
+                Debug.LogError("Could not load Dragon_Blank prefab.");
+                return;
+            }
+
+            var sourceBounds = MeasureSourceBounds(blankPrefab);
+            var dims = new List<float> { sourceBounds.x, sourceBounds.y, sourceBounds.z };
+            dims.Sort();
+
+            var sourceDepth = dims[0];
+            var sourceWidth = dims[1];
+            var sourceHeight = dims[2];
+
+            var usableRun = _planeSide * (1f - (2f * outerMarginRatio));
+
+            // South and North are the longer sides in this Sichuan setup: 14 stacks.
+            _tileWidthTarget = usableRun / (14f + (13f * stackGapRatio));
+            _tileHeightTarget = _tileWidthTarget * (28f / 21f);
+            _tileDepthTarget = _tileHeightTarget * (16f / 28f);
+
+            _stackGap = _tileWidthTarget * stackGapRatio;
+            _stackOverlap = _tileWidthTarget * stackOverlapRatio;
+            _cornerGap = _tileWidthTarget * cornerGapRatio;
+
+            var scaleByWidth = _tileWidthTarget / sourceWidth;
+            var scaleByHeight = _tileHeightTarget / sourceHeight;
+            var scaleByDepth = _tileDepthTarget / sourceDepth;
+            _tileScale = Mathf.Min(scaleByWidth, scaleByHeight, scaleByDepth);
+            _wallTileScale = new Vector3(
+                _tileScale * wallHorizontalScaleMultiplier,
+                _tileScale,
+                _tileScale * wallHorizontalScaleMultiplier);
+
+            _southWallTileSize = MeasureOrientedTileSize(blankPrefab, Quaternion.Euler(180f, 0f, 0f), _wallTileScale);
+            _westWallTileSize = MeasureOrientedTileSize(blankPrefab, Quaternion.Euler(180f, 90f, 0f), _wallTileScale);
+        }
+
+        private void RenderInitialWalls()
+        {
+            ClearSpawnedVisuals();
+
+            const int longSideStacks = 14;
+            const int shortSideStacks = 13;
+
+            var longRun = (longSideStacks * _southWallTileSize.x) + ((longSideStacks - 1) * _stackGap);
+            var shortRun = (shortSideStacks * _westWallTileSize.z) + ((shortSideStacks - 1) * _stackGap);
+
+            var innerHalfWidth = (shortRun * 0.5f) + _cornerGap;
+            var innerHalfLength = (longRun * 0.5f) + _cornerGap;
+
+            var southCenter = new Vector3(0f, 0f, -(innerHalfLength + (_southWallTileSize.z * 0.5f)));
+            var northCenter = new Vector3(0f, 0f, innerHalfLength + (_southWallTileSize.z * 0.5f));
+            var westCenter = new Vector3(-(innerHalfWidth + (_westWallTileSize.x * 0.5f)), 0f, 0f);
+            var eastCenter = new Vector3(innerHalfWidth + (_westWallTileSize.x * 0.5f), 0f, 0f);
+
+            RenderWall(
+                "SouthWall",
+                longSideStacks,
+                southCenter,
+                Quaternion.Euler(180f, 0f, 0f),
+                false,
+                _southWallTileSize);
+
+            RenderWall(
+                "NorthWall",
+                longSideStacks,
+                northCenter,
+                Quaternion.Euler(180f, 180f, 0f),
+                false,
+                _southWallTileSize);
+
+            RenderWall(
+                "WestWall",
+                shortSideStacks,
+                westCenter,
+                Quaternion.Euler(180f, 90f, 0f),
+                true,
+                _westWallTileSize);
+
+            RenderWall(
+                "EastWall",
+                shortSideStacks,
+                eastCenter,
+                Quaternion.Euler(180f, -90f, 0f),
+                true,
+                _westWallTileSize);
+        }
+
+        private void RenderWall(
+            string wallName,
+            int stacks,
+            Vector3 center,
+            Quaternion rotation,
+            bool verticalSeat,
+            Vector3 tileSize)
+        {
+            var root = CreateOrGetChild(wallRoot, wallName);
+            var blankPrefab = PrototypeTileCatalog.LoadPrefab(PrototypeTileId.DragonBlank);
+            if (blankPrefab == null)
             {
                 return;
             }
 
-            if (handIndex < 0 || handIndex >= _hands[0].Count)
+            var along = verticalSeat ? tileSize.z : tileSize.x;
+            var up = tileSize.y;
+            var step = Mathf.Max(0.0001f, along + _stackGap - _stackOverlap);
+            var totalRun = along + ((stacks - 1) * step);
+            var start = -totalRun * 0.5f + (along * 0.5f);
+
+            for (var stackIndex = 0; stackIndex < stacks; stackIndex++)
             {
-                return;
-            }
-
-            var tile = _hands[0][handIndex];
-            _hands[0].RemoveAt(handIndex);
-            _discards[0].Add(tile);
-            _awaitingLocalDiscard = false;
-            _statusMessage = "You discarded " + PrototypeTileCatalog.GetShortName(tile);
-            RenderState();
-            AdvanceTurn();
-        }
-
-        private void StartPrototypeRound()
-        {
-            StopAllCoroutines();
-            ClearCollections();
-            BuildWall();
-            DealOpeningHands();
-            _currentPlayer = 0;
-            _roundFinished = false;
-            _statusMessage = "Your turn: click a tile to discard";
-            RenderState();
-            StartCoroutine(RunLoop());
-        }
-
-        private IEnumerator RunLoop()
-        {
-            while (!_roundFinished)
-            {
-                if (_wall.Count == 0)
+                for (var level = 0; level < 2; level++)
                 {
-                    _roundFinished = true;
-                    _statusMessage = "Wall exhausted. Prototype round complete.";
-                    RenderState();
-                    yield break;
-                }
+                    var tile = Instantiate(blankPrefab, root);
+                    tile.name = wallName + "_Stack_" + stackIndex + "_Tile_" + level;
 
-                DrawTile(_currentPlayer);
-                RenderState();
+                    var offset = start + (stackIndex * step);
+                    var position = verticalSeat
+                        ? center + new Vector3(0f, (up * 0.5f) + (level * up), offset)
+                        : center + new Vector3(offset, (up * 0.5f) + (level * up), 0f);
 
-                if (_currentPlayer == 0)
-                {
-                    _awaitingLocalDiscard = true;
-                    _statusMessage = "Your turn: click a tile to discard";
-                    while (_awaitingLocalDiscard)
-                    {
-                        yield return null;
-                    }
-                }
-                else
-                {
-                    _statusMessage = "AI " + (_currentPlayer + 1) + " is thinking...";
-                    yield return new WaitForSeconds(aiTurnDelaySeconds);
-                    DiscardRandomTile(_currentPlayer);
-                    RenderState();
-                    yield return new WaitForSeconds(0.2f);
-                    AdvanceTurn();
+                    tile.transform.localPosition = position;
+                    tile.transform.localRotation = rotation;
+                    tile.transform.localScale = _wallTileScale;
+                    _spawnedVisuals.Add(tile);
                 }
             }
         }
 
-        private void AdvanceTurn()
+        private Vector3 MeasureSourceBounds(GameObject prefab)
         {
-            _currentPlayer = (_currentPlayer + 1) % 4;
+            var sample = Instantiate(prefab);
+            sample.hideFlags = HideFlags.HideAndDontSave;
+            sample.transform.position = new Vector3(1000f, 1000f, 1000f);
+            sample.transform.rotation = Quaternion.identity;
+            sample.transform.localScale = Vector3.one;
+
+            var bounds = CollectBounds(sample);
+            var size = bounds.size;
+            Destroy(sample);
+            return size;
         }
 
-        private void DiscardRandomTile(int playerIndex)
+        private Vector3 MeasureOrientedTileSize(GameObject prefab, Quaternion rotation, Vector3 scale)
         {
-            var hand = _hands[playerIndex];
-            if (hand.Count == 0)
-            {
-                return;
-            }
+            var sample = Instantiate(prefab);
+            sample.hideFlags = HideFlags.HideAndDontSave;
+            sample.transform.position = new Vector3(1000f, 1000f, 1000f);
+            sample.transform.rotation = rotation;
+            sample.transform.localScale = scale;
 
-            var discardIndex = UnityEngine.Random.Range(0, hand.Count);
-            var tile = hand[discardIndex];
-            hand.RemoveAt(discardIndex);
-            _discards[playerIndex].Add(tile);
-            _statusMessage = "AI " + (playerIndex + 1) + " discarded " + PrototypeTileCatalog.GetShortName(tile);
+            var bounds = CollectBounds(sample);
+            var size = bounds.size;
+            Destroy(sample);
+            return size;
         }
 
-        private void DrawTile(int playerIndex)
+        private Bounds CollectBounds(GameObject root)
         {
-            if (_wall.Count == 0)
+            var renderers = root.GetComponentsInChildren<Renderer>();
+            var bounds = renderers[0].bounds;
+            for (var i = 1; i < renderers.Length; i++)
             {
-                return;
+                bounds.Encapsulate(renderers[i].bounds);
             }
 
-            var tile = _wall[_wall.Count - 1];
-            _wall.RemoveAt(_wall.Count - 1);
-            _hands[playerIndex].Add(tile);
-            _hands[playerIndex].Sort();
+            return bounds;
         }
 
-        private void DealOpeningHands()
+        private Transform CreateOrGetChild(Transform parent, string childName)
         {
-            for (var i = 0; i < 13; i++)
+            var existing = parent.Find(childName);
+            if (existing != null)
             {
-                for (var playerIndex = 0; playerIndex < 4; playerIndex++)
-                {
-                    DrawTile(playerIndex);
-                }
+                return existing;
             }
+
+            var child = new GameObject(childName).transform;
+            child.SetParent(parent, false);
+            return child;
         }
 
-        private void BuildWall()
+        private void ClearSpawnedVisuals()
         {
-            var values = (PrototypeTileId[])Enum.GetValues(typeof(PrototypeTileId));
-            for (var copy = 0; copy < 4; copy++)
-            {
-                foreach (var tileId in values)
-                {
-                    _wall.Add(tileId);
-                }
-            }
-
-            for (var i = _wall.Count - 1; i > 0; i--)
-            {
-                var swapIndex = UnityEngine.Random.Range(0, i + 1);
-                var temp = _wall[i];
-                _wall[i] = _wall[swapIndex];
-                _wall[swapIndex] = temp;
-            }
-        }
-
-        private void ClearCollections()
-        {
-            foreach (var hand in _hands)
-            {
-                hand.Clear();
-            }
-
-            foreach (var discard in _discards)
-            {
-                discard.Clear();
-            }
-
-            _wall.Clear();
-
             foreach (var visual in _spawnedVisuals)
             {
                 if (visual != null)
@@ -218,136 +241,15 @@ namespace Majiang.Prototype
             }
 
             _spawnedVisuals.Clear();
-        }
 
-        private void RenderState()
-        {
-            foreach (var visual in _spawnedVisuals)
-            {
-                if (visual != null)
-                {
-                    Destroy(visual);
-                }
-            }
-
-            _spawnedVisuals.Clear();
-
-            RenderLocalHand();
-            RenderAiHand(westHandRoot, 1, new Vector3(-3.7f, 0.3f, 0f), new Vector3(0f, -90f, 90f));
-            RenderAiHand(northHandRoot, 2, new Vector3(0f, 0.3f, 3.5f), new Vector3(0f, 180f, 90f));
-            RenderAiHand(eastHandRoot, 3, new Vector3(3.7f, 0.3f, 0f), new Vector3(0f, 90f, 90f));
-
-            RenderDiscards(southDiscardsRoot, 0, new Vector3(0f, 0.15f, -0.8f), Vector3.zero);
-            RenderDiscards(westDiscardsRoot, 1, new Vector3(-1.7f, 0.15f, 0.5f), new Vector3(0f, 90f, 0f));
-            RenderDiscards(northDiscardsRoot, 2, new Vector3(0f, 0.15f, 1.6f), new Vector3(0f, 180f, 0f));
-            RenderDiscards(eastDiscardsRoot, 3, new Vector3(1.7f, 0.15f, 0.5f), new Vector3(0f, -90f, 0f));
-
-            RenderWallCounter();
-        }
-
-        private void RenderLocalHand()
-        {
-            if (southHandRoot == null)
-            {
-                return;
-            }
-
-            var hand = _hands[0];
-            var totalWidth = (hand.Count - 1) * localHandSpacing;
-            var startX = -totalWidth * 0.5f;
-
-            for (var i = 0; i < hand.Count; i++)
-            {
-                var prefab = PrototypeTileCatalog.LoadPrefab(hand[i]);
-                if (prefab == null)
-                {
-                    continue;
-                }
-
-                var tile = Instantiate(prefab, southHandRoot);
-                tile.transform.localPosition = new Vector3(startX + (i * localHandSpacing), localHandLift, 0f);
-                tile.transform.localRotation = Quaternion.identity;
-                tile.transform.localScale = Vector3.one * localHandScale;
-
-                var view = tile.AddComponent<PrototypeTileView>();
-                view.Bind(this, i);
-                _spawnedVisuals.Add(tile);
-            }
-        }
-
-        private void RenderAiHand(Transform root, int playerIndex, Vector3 center, Vector3 eulerRotation)
-        {
-            if (root == null)
-            {
-                return;
-            }
-
-            var handCount = _hands[playerIndex].Count;
-            var totalWidth = Mathf.Max(0f, (handCount - 1) * 0.38f);
-            var start = -totalWidth * 0.5f;
-
-            for (var i = 0; i < handCount; i++)
-            {
-                var tile = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                tile.name = "AI" + (playerIndex + 1) + "Tile" + (i + 1);
-                tile.transform.SetParent(root, false);
-                tile.transform.localPosition = center + new Vector3(start + (i * 0.38f), 0.38f, 0f);
-                tile.transform.localRotation = Quaternion.Euler(eulerRotation);
-                tile.transform.localScale = new Vector3(0.34f, 0.54f, 0.22f);
-
-                var renderer = tile.GetComponent<Renderer>();
-                renderer.material.color = _aiTileColor;
-                _spawnedVisuals.Add(tile);
-            }
-        }
-
-        private void RenderDiscards(Transform root, int playerIndex, Vector3 center, Vector3 eulerRotation)
-        {
-            if (root == null)
-            {
-                return;
-            }
-
-            var discards = _discards[playerIndex];
-            const int columns = 6;
-            for (var i = 0; i < discards.Count; i++)
-            {
-                var prefab = PrototypeTileCatalog.LoadPrefab(discards[i]);
-                if (prefab == null)
-                {
-                    continue;
-                }
-
-                var tile = Instantiate(prefab, root);
-                var row = i / columns;
-                var column = i % columns;
-                tile.transform.localPosition = center + new Vector3(
-                    (column - ((columns - 1) * 0.5f)) * discardSpacing,
-                    0.02f,
-                    row * 0.58f);
-                tile.transform.localRotation = Quaternion.Euler(eulerRotation);
-                tile.transform.localScale = Vector3.one * 0.72f;
-                _spawnedVisuals.Add(tile);
-            }
-        }
-
-        private void RenderWallCounter()
-        {
             if (wallRoot == null)
             {
                 return;
             }
 
-            var blocks = Mathf.Clamp(Mathf.CeilToInt(_wall.Count / 8f), 0, 18);
-            for (var i = 0; i < blocks; i++)
+            for (var i = wallRoot.childCount - 1; i >= 0; i--)
             {
-                var block = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                block.name = "WallBlock" + (i + 1);
-                block.transform.SetParent(wallRoot, false);
-                block.transform.localPosition = new Vector3(-2.8f + (i * 0.33f), 0.28f, -2.65f);
-                block.transform.localScale = new Vector3(0.26f, 0.45f, 0.18f);
-                block.GetComponent<Renderer>().material.color = new Color(0.86f, 0.83f, 0.76f, 1f);
-                _spawnedVisuals.Add(block);
+                Destroy(wallRoot.GetChild(i).gameObject);
             }
         }
 
@@ -355,111 +257,39 @@ namespace Majiang.Prototype
         {
             if (tableRoot == null) tableRoot = transform.Find("TableRoot");
             if (wallRoot == null) wallRoot = transform.Find("WallRoot");
-            if (southHandRoot == null) southHandRoot = transform.Find("Players/PlayerSouth");
-            if (westHandRoot == null) westHandRoot = transform.Find("Players/PlayerWest");
-            if (northHandRoot == null) northHandRoot = transform.Find("Players/PlayerNorth");
-            if (eastHandRoot == null) eastHandRoot = transform.Find("Players/PlayerEast");
-            if (southDiscardsRoot == null) southDiscardsRoot = transform.Find("Discards/South");
-            if (westDiscardsRoot == null) westDiscardsRoot = transform.Find("Discards/West");
-            if (northDiscardsRoot == null) northDiscardsRoot = transform.Find("Discards/North");
-            if (eastDiscardsRoot == null) eastDiscardsRoot = transform.Find("Discards/East");
         }
 
         private void BuildTableIfMissing()
         {
-            if (tableRoot != null)
-            {
-                if (tableRoot.Find("TableBase") == null)
-                {
-                    CreateTableGeometry();
-                }
-                return;
-            }
-
-            tableRoot = new GameObject("TableRoot").transform;
-            tableRoot.SetParent(transform, false);
-
-            var players = new GameObject("Players").transform;
-            players.SetParent(transform, false);
-            southHandRoot = new GameObject("PlayerSouth").transform;
-            westHandRoot = new GameObject("PlayerWest").transform;
-            northHandRoot = new GameObject("PlayerNorth").transform;
-            eastHandRoot = new GameObject("PlayerEast").transform;
-            southHandRoot.SetParent(players, false);
-            westHandRoot.SetParent(players, false);
-            northHandRoot.SetParent(players, false);
-            eastHandRoot.SetParent(players, false);
-
-            var discards = new GameObject("Discards").transform;
-            discards.SetParent(transform, false);
-            southDiscardsRoot = new GameObject("South").transform;
-            westDiscardsRoot = new GameObject("West").transform;
-            northDiscardsRoot = new GameObject("North").transform;
-            eastDiscardsRoot = new GameObject("East").transform;
-            southDiscardsRoot.SetParent(discards, false);
-            westDiscardsRoot.SetParent(discards, false);
-            northDiscardsRoot.SetParent(discards, false);
-            eastDiscardsRoot.SetParent(discards, false);
-
-            wallRoot = new GameObject("WallRoot").transform;
-            wallRoot.SetParent(transform, false);
-
-            CreateTableGeometry();
-        }
-
-        private void CreateTableGeometry()
-        {
             if (tableRoot == null)
             {
-                return;
+                tableRoot = new GameObject("TableRoot").transform;
+                tableRoot.SetParent(transform, false);
             }
 
-            var baseBlock = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            baseBlock.name = "TableBase";
-            baseBlock.transform.SetParent(tableRoot, false);
-            baseBlock.transform.localPosition = new Vector3(0f, -0.35f, 0f);
-            baseBlock.transform.localScale = new Vector3(8f, 0.7f, 8f);
-            baseBlock.GetComponent<Renderer>().material.color = _tableWood;
-
-            var felt = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            felt.name = "TableFelt";
-            felt.transform.SetParent(tableRoot, false);
-            felt.transform.localPosition = new Vector3(0f, 0.02f, 0f);
-            felt.transform.localScale = new Vector3(7.1f, 0.08f, 7.1f);
-            felt.GetComponent<Renderer>().material.color = _tableFelt;
-
-            CreateRail("NorthRail", new Vector3(0f, 0.2f, 3.6f), new Vector3(7.5f, 0.25f, 0.35f));
-            CreateRail("SouthRail", new Vector3(0f, 0.2f, -3.6f), new Vector3(7.5f, 0.25f, 0.35f));
-            CreateRail("WestRail", new Vector3(-3.6f, 0.2f, 0f), new Vector3(0.35f, 0.25f, 7.5f));
-            CreateRail("EastRail", new Vector3(3.6f, 0.2f, 0f), new Vector3(0.35f, 0.25f, 7.5f));
-        }
-
-        private void CreateRail(string railName, Vector3 localPosition, Vector3 localScale)
-        {
-            if (tableRoot == null)
+            if (wallRoot == null)
             {
-                return;
+                wallRoot = new GameObject("WallRoot").transform;
+                wallRoot.SetParent(transform, false);
             }
 
-            var rail = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            rail.name = railName;
-            rail.transform.SetParent(tableRoot, false);
-            rail.transform.localPosition = localPosition;
-            rail.transform.localScale = localScale;
-            rail.GetComponent<Renderer>().material.color = new Color(0.36f, 0.23f, 0.16f, 1f);
-        }
-
-        private void OnGUI()
-        {
-            var panelRect = new Rect(16f, 16f, 280f, 140f);
-            GUI.Box(panelRect, "Prototype Round");
-            GUI.Label(new Rect(28f, 48f, 220f, 24f), "Current Turn: Seat " + (_currentPlayer + 1));
-            GUI.Label(new Rect(28f, 72f, 220f, 24f), "Wall Remaining: " + _wall.Count);
-            GUI.Label(new Rect(28f, 96f, 420f, 24f), _statusMessage);
-
-            if (GUI.Button(new Rect(28f, 124f, 120f, 28f), "Restart Round"))
+            var tablePlane = tableRoot.Find("TablePlane");
+            if (tablePlane == null)
             {
-                StartPrototypeRound();
+                var plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                plane.name = "TablePlane";
+                plane.transform.SetParent(tableRoot, false);
+                plane.transform.localPosition = Vector3.zero;
+                plane.transform.localRotation = Quaternion.identity;
+                plane.transform.localScale = new Vector3(planeScale, 1f, planeScale);
+
+                var renderer = plane.GetComponent<Renderer>();
+                renderer.material.color = tableColor;
+            }
+            else
+            {
+                tablePlane.localScale = new Vector3(planeScale, 1f, planeScale);
+                tablePlane.GetComponent<Renderer>().material.color = tableColor;
             }
         }
     }
