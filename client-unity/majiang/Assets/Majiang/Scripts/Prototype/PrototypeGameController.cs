@@ -6,46 +6,39 @@ namespace Majiang.Prototype
     public sealed class PrototypeGameController : MonoBehaviour
     {
         [Header("Scene References")]
-        public Transform tableRoot;
         public Transform wallRoot;
 
-        [Header("Table")]
-        public float planeScale = 0.72f;
-        public Color tableColor = new Color(0.16f, 0.44f, 0.32f, 1f);
+        public float framePaddingMeters = 0.012f;
 
-        [Header("Wall Ratios")]
-        public float outerMarginRatio = 0.11f;
-        public float stackGapRatio = 0f;
-        public float stackOverlapRatio = 0f;
-        public float cornerGapRatio = 0.02f;
+        [Header("Tile Dimensions (Meters)")]
+        public float tileLengthMeters = 0.028f;
+        public float tileWidthMeters = 0.02f;
+        public float tileThicknessMeters = 0.012f;
         public float wallHorizontalScaleMultiplier = 1f;
 
         private readonly List<GameObject> _spawnedVisuals = new List<GameObject>();
 
-        private float _planeSide;
         private float _tileWidthTarget;
         private float _tileHeightTarget;
         private float _tileDepthTarget;
         private float _tileScale;
-        private float _stackGap;
-        private float _stackOverlap;
-        private float _cornerGap;
+        private float _innerMinX;
+        private float _innerMaxX;
+        private float _innerMinZ;
+        private float _innerMaxZ;
         private Vector3 _southWallTileSize;
         private Vector3 _westWallTileSize;
         private Vector3 _wallTileScale;
 
-        private void Start()
+        public void GenerateStaticWalls()
         {
             EnsureSceneReferences();
-            BuildTableIfMissing();
             CalculateGeometry();
             RenderInitialWalls();
         }
 
         private void CalculateGeometry()
         {
-            _planeSide = planeScale * 10f;
-
             var blankPrefab = PrototypeTileCatalog.LoadPrefab(PrototypeTileId.DragonBlank);
             if (blankPrefab == null)
             {
@@ -61,16 +54,9 @@ namespace Majiang.Prototype
             var sourceWidth = dims[1];
             var sourceHeight = dims[2];
 
-            var usableRun = _planeSide * (1f - (2f * outerMarginRatio));
-
-            // South and North are the longer sides in this Sichuan setup: 14 stacks.
-            _tileWidthTarget = usableRun / (14f + (13f * stackGapRatio));
-            _tileHeightTarget = _tileWidthTarget * (28f / 21f);
-            _tileDepthTarget = _tileHeightTarget * (16f / 28f);
-
-            _stackGap = _tileWidthTarget * stackGapRatio;
-            _stackOverlap = _tileWidthTarget * stackOverlapRatio;
-            _cornerGap = _tileWidthTarget * cornerGapRatio;
+            _tileWidthTarget = tileWidthMeters;
+            _tileHeightTarget = tileLengthMeters;
+            _tileDepthTarget = tileThicknessMeters;
 
             var scaleByWidth = _tileWidthTarget / sourceWidth;
             var scaleByHeight = _tileHeightTarget / sourceHeight;
@@ -83,56 +69,63 @@ namespace Majiang.Prototype
 
             _southWallTileSize = MeasureOrientedTileSize(blankPrefab, Quaternion.Euler(180f, 0f, 0f), _wallTileScale);
             _westWallTileSize = MeasureOrientedTileSize(blankPrefab, Quaternion.Euler(180f, 90f, 0f), _wallTileScale);
+
+            var longWallRun = _southWallTileSize.x * 14f;
+            var frameSide = longWallRun + (framePaddingMeters * 2f);
+            var frameHalfSide = frameSide * 0.5f;
+            _innerMinX = -frameHalfSide;
+            _innerMaxX = frameHalfSide;
+            _innerMinZ = -frameHalfSide;
+            _innerMaxZ = frameHalfSide;
         }
 
         private void RenderInitialWalls()
         {
             ClearSpawnedVisuals();
 
-            const int longSideStacks = 14;
-            const int shortSideStacks = 13;
-
-            var longRun = (longSideStacks * _southWallTileSize.x) + ((longSideStacks - 1) * _stackGap);
-            var shortRun = (shortSideStacks * _westWallTileSize.z) + ((shortSideStacks - 1) * _stackGap);
-
-            var innerHalfWidth = (shortRun * 0.5f) + _cornerGap;
-            var innerHalfLength = (longRun * 0.5f) + _cornerGap;
-
-            var southCenter = new Vector3(0f, 0f, -(innerHalfLength + (_southWallTileSize.z * 0.5f)));
-            var northCenter = new Vector3(0f, 0f, innerHalfLength + (_southWallTileSize.z * 0.5f));
-            var westCenter = new Vector3(-(innerHalfWidth + (_westWallTileSize.x * 0.5f)), 0f, 0f);
-            var eastCenter = new Vector3(innerHalfWidth + (_westWallTileSize.x * 0.5f), 0f, 0f);
+            const int northSouthStacks = 14;
+            const int eastWestStacks = 13;
+            var southStep = _southWallTileSize.x;
+            var westStep = _westWallTileSize.z;
 
             RenderWall(
                 "SouthWall",
-                longSideStacks,
-                southCenter,
+                northSouthStacks,
+                new Vector3(0f, 0f, _innerMinZ),
                 Quaternion.Euler(180f, 0f, 0f),
-                false,
+                Vector3.right,
+                _innerMaxX - (_southWallTileSize.x * 0.5f),
+                -southStep,
                 _southWallTileSize);
 
             RenderWall(
                 "NorthWall",
-                longSideStacks,
-                northCenter,
+                northSouthStacks,
+                new Vector3(0f, 0f, _innerMaxZ),
                 Quaternion.Euler(180f, 180f, 0f),
-                false,
+                Vector3.right,
+                _innerMinX + (_southWallTileSize.x * 0.5f),
+                southStep,
                 _southWallTileSize);
 
             RenderWall(
                 "WestWall",
-                shortSideStacks,
-                westCenter,
+                eastWestStacks,
+                new Vector3(_innerMinX, 0f, 0f),
                 Quaternion.Euler(180f, 90f, 0f),
-                true,
+                Vector3.forward,
+                _innerMinZ + (_westWallTileSize.z * 0.5f),
+                westStep,
                 _westWallTileSize);
 
             RenderWall(
                 "EastWall",
-                shortSideStacks,
-                eastCenter,
+                eastWestStacks,
+                new Vector3(_innerMaxX, 0f, 0f),
                 Quaternion.Euler(180f, -90f, 0f),
-                true,
+                Vector3.forward,
+                _innerMaxZ - (_westWallTileSize.z * 0.5f),
+                -westStep,
                 _westWallTileSize);
         }
 
@@ -141,7 +134,9 @@ namespace Majiang.Prototype
             int stacks,
             Vector3 center,
             Quaternion rotation,
-            bool verticalSeat,
+            Vector3 axis,
+            float startOffset,
+            float step,
             Vector3 tileSize)
         {
             var root = CreateOrGetChild(wallRoot, wallName);
@@ -151,11 +146,7 @@ namespace Majiang.Prototype
                 return;
             }
 
-            var along = verticalSeat ? tileSize.z : tileSize.x;
             var up = tileSize.y;
-            var step = Mathf.Max(0.0001f, along + _stackGap - _stackOverlap);
-            var totalRun = along + ((stacks - 1) * step);
-            var start = -totalRun * 0.5f + (along * 0.5f);
 
             for (var stackIndex = 0; stackIndex < stacks; stackIndex++)
             {
@@ -164,10 +155,8 @@ namespace Majiang.Prototype
                     var tile = Instantiate(blankPrefab, root);
                     tile.name = wallName + "_Stack_" + stackIndex + "_Tile_" + level;
 
-                    var offset = start + (stackIndex * step);
-                    var position = verticalSeat
-                        ? center + new Vector3(0f, (up * 0.5f) + (level * up), offset)
-                        : center + new Vector3(offset, (up * 0.5f) + (level * up), 0f);
+                    var offset = startOffset + (stackIndex * step);
+                    var position = center + (axis * offset) + new Vector3(0f, (up * 0.5f) + (level * up), 0f);
 
                     tile.transform.localPosition = position;
                     tile.transform.localRotation = rotation;
@@ -187,7 +176,7 @@ namespace Majiang.Prototype
 
             var bounds = CollectBounds(sample);
             var size = bounds.size;
-            Destroy(sample);
+            DestroyImmediate(sample);
             return size;
         }
 
@@ -201,7 +190,7 @@ namespace Majiang.Prototype
 
             var bounds = CollectBounds(sample);
             var size = bounds.size;
-            Destroy(sample);
+            DestroyImmediate(sample);
             return size;
         }
 
@@ -255,42 +244,7 @@ namespace Majiang.Prototype
 
         private void EnsureSceneReferences()
         {
-            if (tableRoot == null) tableRoot = transform.Find("TableRoot");
             if (wallRoot == null) wallRoot = transform.Find("WallRoot");
-        }
-
-        private void BuildTableIfMissing()
-        {
-            if (tableRoot == null)
-            {
-                tableRoot = new GameObject("TableRoot").transform;
-                tableRoot.SetParent(transform, false);
-            }
-
-            if (wallRoot == null)
-            {
-                wallRoot = new GameObject("WallRoot").transform;
-                wallRoot.SetParent(transform, false);
-            }
-
-            var tablePlane = tableRoot.Find("TablePlane");
-            if (tablePlane == null)
-            {
-                var plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
-                plane.name = "TablePlane";
-                plane.transform.SetParent(tableRoot, false);
-                plane.transform.localPosition = Vector3.zero;
-                plane.transform.localRotation = Quaternion.identity;
-                plane.transform.localScale = new Vector3(planeScale, 1f, planeScale);
-
-                var renderer = plane.GetComponent<Renderer>();
-                renderer.material.color = tableColor;
-            }
-            else
-            {
-                tablePlane.localScale = new Vector3(planeScale, 1f, planeScale);
-                tablePlane.GetComponent<Renderer>().material.color = tableColor;
-            }
         }
     }
 }
