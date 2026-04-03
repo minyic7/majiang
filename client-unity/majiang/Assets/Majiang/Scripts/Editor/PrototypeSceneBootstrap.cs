@@ -17,8 +17,8 @@ namespace Majiang.Editor
             var cameraObject = new GameObject("Main Camera");
             var camera = cameraObject.AddComponent<Camera>();
             cameraObject.tag = "MainCamera";
-            camera.transform.position = new Vector3(0f, 1.1f, -0.82f);
-            camera.transform.rotation = Quaternion.Euler(58f, 0f, 0f);
+            camera.transform.position = new Vector3(0f, 0.4f, -0.53f);
+            camera.transform.rotation = Quaternion.Euler(40f, 0f, 0f);
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.12f, 0.21f, 0.35f, 1f);
 
