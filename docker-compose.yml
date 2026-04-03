@@ -1,16 +1,14 @@
 services:
-  web:
-    image: ghcr.io/minyic7/majiang-web:latest
-    ports:
-      - "3002:80"
-    depends_on:
-      - server
-    restart: unless-stopped
-
   server:
     image: ghcr.io/minyic7/majiang-server:latest
+    build:
+      context: ./server-dotnet
+      dockerfile: Dockerfile
     ports:
       - "7702:7702"
     environment:
       - PORT=7702
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:7702
     restart: unless-stopped
+

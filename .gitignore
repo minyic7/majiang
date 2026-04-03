@@ -1,6 +1,9 @@
-node_modules/
-dist/
-*.tgz
-.env
+bin/
+obj/
 .DS_Store
-packages/shared/tsconfig.tsbuildinfo
+.vs/
+.vscode/
+*.user
+*.suo
+*.swp
+
